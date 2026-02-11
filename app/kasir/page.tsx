@@ -98,7 +98,7 @@ export default function KasirPage() {
       id: menu.id,
       name: menu.name,
       price: menu.price,
-      image: menu.image,
+      image: menu.image ?? undefined,
     });
   };
 
