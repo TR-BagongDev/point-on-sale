@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ReceiptPreview } from "@/components/ReceiptPreview";
 import {
   Settings,
   Store,
@@ -247,126 +248,147 @@ export default function PengaturanPage() {
 
           {/* Receipt Settings */}
           <TabsContent value="receipt">
-            <Card>
-              <CardHeader>
-                <CardTitle>Template Struk</CardTitle>
-                <CardDescription>
-                  Kustomisasi tampilan struk pembayaran
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="header">Header Struk</Label>
-                  <textarea
-                    id="header"
-                    className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={receiptSettings.header}
-                    onChange={(e) =>
-                      setReceiptSettings({ ...receiptSettings, header: e.target.value })
-                    }
-                    placeholder="WARUNG NASI GORENG&#10;Jl. Contoh No. 123&#10;Telp: 081234567890"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="footer">Footer Struk</Label>
-                  <textarea
-                    id="footer"
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={receiptSettings.footer}
-                    onChange={(e) =>
-                      setReceiptSettings({ ...receiptSettings, footer: e.target.value })
-                    }
-                    placeholder="Terima kasih atas kunjungan Anda!"
-                  />
-                </div>
-                <div className="space-y-4">
-                  <Label>Opsi Tampilan</Label>
-                  <div className="grid gap-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={receiptSettings.showDate}
-                        onChange={(e) =>
-                          setReceiptSettings({
-                            ...receiptSettings,
-                            showDate: e.target.checked,
-                          })
-                        }
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm">Tampilkan Tanggal</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={receiptSettings.showTime}
-                        onChange={(e) =>
-                          setReceiptSettings({
-                            ...receiptSettings,
-                            showTime: e.target.checked,
-                          })
-                        }
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm">Tampilkan Waktu</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={receiptSettings.showCashier}
-                        onChange={(e) =>
-                          setReceiptSettings({
-                            ...receiptSettings,
-                            showCashier: e.target.checked,
-                          })
-                        }
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm">Tampilkan Nama Kasir</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={receiptSettings.showTax}
-                        onChange={(e) =>
-                          setReceiptSettings({
-                            ...receiptSettings,
-                            showTax: e.target.checked,
-                          })
-                        }
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm">Tampilkan Pajak</span>
-                    </label>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Receipt Settings Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Template Struk</CardTitle>
+                  <CardDescription>
+                    Kustomisasi tampilan struk pembayaran
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="header">Header Struk</Label>
+                    <textarea
+                      id="header"
+                      className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={receiptSettings.header}
+                      onChange={(e) =>
+                        setReceiptSettings({ ...receiptSettings, header: e.target.value })
+                      }
+                      placeholder="WARUNG NASI GORENG&#10;Jl. Contoh No. 123&#10;Telp: 081234567890"
+                    />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paperWidth">Lebar Kertas (mm)</Label>
-                  <select
-                    id="paperWidth"
-                    className="flex h-10 w-full max-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    value={receiptSettings.paperWidth}
-                    onChange={(e) =>
-                      setReceiptSettings({
-                        ...receiptSettings,
-                        paperWidth: parseInt(e.target.value),
-                      })
-                    }
+                  <div className="space-y-2">
+                    <Label htmlFor="footer">Footer Struk</Label>
+                    <textarea
+                      id="footer"
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={receiptSettings.footer}
+                      onChange={(e) =>
+                        setReceiptSettings({ ...receiptSettings, footer: e.target.value })
+                      }
+                      placeholder="Terima kasih atas kunjungan Anda!"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <Label>Opsi Tampilan</Label>
+                    <div className="grid gap-3">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.showDate}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              showDate: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Tampilkan Tanggal</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.showTime}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              showTime: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Tampilkan Waktu</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.showCashier}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              showCashier: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Tampilkan Nama Kasir</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.showTax}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              showTax: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Tampilkan Pajak</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="paperWidth">Lebar Kertas (mm)</Label>
+                    <select
+                      id="paperWidth"
+                      className="flex h-10 w-full max-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      value={receiptSettings.paperWidth}
+                      onChange={(e) =>
+                        setReceiptSettings({
+                          ...receiptSettings,
+                          paperWidth: parseInt(e.target.value),
+                        })
+                      }
+                    >
+                      <option value={58}>58mm</option>
+                      <option value={80}>80mm</option>
+                    </select>
+                  </div>
+                  <Button
+                    onClick={handleSaveReceipt}
+                    disabled={saving}
+                    className="bg-primary-600 hover:bg-primary-700"
                   >
-                    <option value={58}>58mm</option>
-                    <option value={80}>80mm</option>
-                  </select>
-                </div>
-                <Button
-                  onClick={handleSaveReceipt}
-                  disabled={saving}
-                  className="bg-primary-600 hover:bg-primary-700"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? "Menyimpan..." : "Simpan Template"}
-                </Button>
-              </CardContent>
-            </Card>
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? "Menyimpan..." : "Simpan Template"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Receipt Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Preview Struk</CardTitle>
+                  <CardDescription>
+                    Preview langsung tampilan struk
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <ReceiptPreview
+                      template={receiptSettings}
+                      settings={storeSettings}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Account Settings */}
