@@ -28,6 +28,7 @@ import {
   Printer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { printReceipt, type Order } from "@/lib/receipt";
 
 interface Menu {
   id: string;
@@ -142,11 +143,33 @@ export default function KasirPage() {
       });
 
       if (res.ok) {
+        const createdOrder: Order = await res.json();
+
+        // Clear cart and close dialog
         clearCart();
         setShowCheckout(false);
         setDiscount(0);
-        // TODO: Show success and print receipt
-        alert("Pesanan berhasil dibuat!");
+
+        // Auto-print receipt
+        try {
+          printReceipt({
+            order: createdOrder,
+            template: {
+              paperWidth: 80, // Default to 80mm thermal printer
+            },
+            settings: {
+              storeName: "Warung Nasi Goreng",
+              address: "",
+              phone: "",
+              taxRate: TAX_RATE,
+              currency: "IDR",
+            },
+          });
+        } catch (printError) {
+          console.error("Print failed:", printError);
+          // Still show success even if print fails
+          alert("Pesanan berhasil dibuat! (Gagal mencetak struk)");
+        }
       }
     } catch (error) {
       console.error("Checkout failed:", error);
