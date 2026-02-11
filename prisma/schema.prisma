@@ -1,0 +1,106 @@
+// POS Warung Nasi Goreng - Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User/Kasir
+model User {
+  id       String   @id @default(cuid())
+  name     String
+  email    String   @unique
+  password String
+  role     String   @default("KASIR") // ADMIN, KASIR
+  isActive Boolean  @default(true)
+  orders   Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Kategori Menu
+model Category {
+  id     String @id @default(cuid())
+  name   String
+  icon   String?
+  color  String?
+  menus  Menu[]
+  order  Int    @default(0)
+}
+
+// Menu Item
+model Menu {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  isAvailable Boolean  @default(true)
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Order/Pesanan
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  items        OrderItem[]
+  subtotal     Float
+  tax          Float    @default(0)
+  discount     Float    @default(0)
+  total        Float
+  paymentMethod String  @default("CASH") // CASH, QRIS, DEBIT
+  status       String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Order Item
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuId   String
+  menu     Menu   @relation(fields: [menuId], references: [id])
+  quantity Int
+  price    Float
+  notes    String?
+}
+
+// Template Struk
+model ReceiptTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  header      String?
+  footer      String?
+  logo        String?
+  showDate    Boolean  @default(true)
+  showTime    Boolean  @default(true)
+  showCashier Boolean  @default(true)
+  showTax     Boolean  @default(true)
+  paperWidth  Int      @default(80) // 58mm or 80mm
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Pengaturan Toko
+model Setting {
+  id          String   @id @default(cuid())
+  storeName   String
+  address     String?
+  phone       String?
+  taxRate     Float    @default(0)
+  currency    String   @default("IDR")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
