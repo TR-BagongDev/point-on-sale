@@ -29,9 +29,11 @@ import {
   DollarSign,
   ShoppingCart,
   FileText,
+  Printer,
 } from "lucide-react";
+import { printReceipt, type Order } from "@/lib/receipt";
 
-interface Order {
+interface LocalOrder {
   id: string;
   orderNumber: string;
   subtotal: number;
@@ -79,8 +81,10 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+const TAX_RATE = 10; // 10% Pajak
+
 export default function LaporanPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<LocalOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -112,7 +116,7 @@ export default function LaporanPage() {
 
       // Filter by payment method
       if (paymentFilter !== "all") {
-        data = data.filter((order: Order) => order.paymentMethod === paymentFilter);
+        data = data.filter((order: LocalOrder) => order.paymentMethod === paymentFilter);
       }
 
       setOrders(data);
@@ -120,6 +124,44 @@ export default function LaporanPage() {
       console.error("Failed to fetch orders:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReprint = async (order: LocalOrder) => {
+    try {
+      // Convert LocalOrder to Order type for printReceipt
+      const orderForPrint: Order = {
+        orderNumber: order.orderNumber,
+        user: order.user,
+        items: order.items.map(item => ({
+          menu: { name: item.menu.name },
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        subtotal: order.subtotal,
+        tax: order.tax,
+        discount: order.discount,
+        total: order.total,
+        paymentMethod: order.paymentMethod,
+        createdAt: new Date(order.createdAt),
+      };
+
+      printReceipt({
+        order: orderForPrint,
+        template: {
+          paperWidth: 80, // Default to 80mm thermal printer
+        },
+        settings: {
+          storeName: "Warung Nasi Goreng",
+          address: "",
+          phone: "",
+          taxRate: TAX_RATE,
+          currency: "IDR",
+        },
+      });
+    } catch (error) {
+      console.error("Gagal mencetak struk:", error);
+      alert("Gagal mencetak struk");
     }
   };
 
@@ -321,6 +363,7 @@ export default function LaporanPage() {
                       <TableHead>Items</TableHead>
                       <TableHead>Metode</TableHead>
                       <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="text-center">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -345,6 +388,16 @@ export default function LaporanPage() {
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary-600">
                           {formatCurrency(order.total)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            onClick={() => handleReprint(order)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
