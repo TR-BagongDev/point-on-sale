@@ -82,7 +82,11 @@ export default function DashboardPage() {
     setAnalyticsLoading(true);
     try {
       // Fetch orders for selected date range
-      const res = await fetch(`/api/order?date=${dateFrom}`);
+      const params = new URLSearchParams({
+        startDate: dateFrom,
+        endDate: dateTo,
+      });
+      const res = await fetch(`/api/order?${params}`);
       const orders = await res.json();
 
       // Calculate stats
@@ -175,16 +179,20 @@ export default function DashboardPage() {
     });
   };
 
+  // Determine if showing single day or date range
+  const isSingleDay = dateFrom === dateTo;
+  const periodLabel = isSingleDay ? "Hari Ini" : "Periode Ini";
+
   const statCards = [
     {
-      title: "Penjualan Hari Ini",
+      title: `Penjualan ${periodLabel}`,
       value: formatCurrency(stats.todaySales),
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
-      title: "Pesanan Hari Ini",
+      title: `Pesanan ${periodLabel}`,
       value: stats.todayOrders.toString(),
       icon: ShoppingCart,
       color: "text-blue-600",
@@ -300,7 +308,7 @@ export default function DashboardPage() {
               </div>
             ) : recentOrders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Belum ada pesanan hari ini
+                Belum ada pesanan untuk periode ini
               </div>
             ) : (
               <div className="space-y-4">
