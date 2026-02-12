@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,7 @@ export default function KasirPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCheckout, setShowCheckout] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [orderNotes, setOrderNotes] = useState("");
 
   const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
 
@@ -135,6 +137,7 @@ export default function KasirPage() {
         discount,
         total,
         paymentMethod,
+        notes: orderNotes,
       };
 
       const res = await fetch("/api/order", {
@@ -150,6 +153,7 @@ export default function KasirPage() {
         clearCart();
         setShowCheckout(false);
         setDiscount(0);
+        setOrderNotes("");
 
         // Auto-print receipt
         try {
@@ -376,6 +380,18 @@ export default function KasirPage() {
           <DialogHeader>
             <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
           </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
+              <Textarea
+                placeholder="Tambahkan catatan untuk pesanan ini..."
+                value={orderNotes}
+                onChange={(e) => setOrderNotes(e.target.value)}
+                maxLength={200}
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-3 py-4">
             <Button
               variant="outline"
