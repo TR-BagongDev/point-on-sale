@@ -10,15 +10,16 @@ datasource db {
 
 // User/Kasir
 model User {
-  id       String   @id @default(cuid())
-  name     String
-  email    String   @unique
-  password String
-  role     String   @default("KASIR") // ADMIN, KASIR
-  isActive Boolean  @default(true)
-  orders   Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          String   @default("KASIR") // ADMIN, KASIR
+  isActive      Boolean  @default(true)
+  orders        Order[]
+  modifications OrderModification[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // Kategori Menu
@@ -53,6 +54,7 @@ model Order {
   userId       String
   user         User     @relation(fields: [userId], references: [id])
   items        OrderItem[]
+  modifications OrderModification[]
   subtotal     Float
   tax          Float    @default(0)
   discount     Float    @default(0)
@@ -74,6 +76,19 @@ model OrderItem {
   quantity Int
   price    Float
   notes    String?
+}
+
+// Order Modification History
+model OrderModification {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // ITEM_ADDED, ITEM_REMOVED, QUANTITY_CHANGED, STATUS_CHANGED, NOTES_UPDATED, ORDER_UPDATED
+  description String   // Human-readable description of what changed
+  changes     String?  // JSON string storing specific details (oldValue, newValue, fieldName)
+  createdAt   DateTime @default(now())
 }
 
 // Template Struk
