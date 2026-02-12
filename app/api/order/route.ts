@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const date = searchParams.get("date");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
     const userId = searchParams.get("userId");
 
     const where: Record<string, unknown> = {};
@@ -26,13 +28,24 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
 
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
+    // Support both single date and date range
+    if (startDate && endDate) {
+      // Date range query
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1); // Include the entire end date
       where.createdAt = {
-        gte: startDate,
-        lt: endDate,
+        gte: start,
+        lt: end,
+      };
+    } else if (date) {
+      // Single date query (legacy support)
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setDate(end.getDate() + 1);
+      where.createdAt = {
+        gte: start,
+        lt: end,
       };
     }
 

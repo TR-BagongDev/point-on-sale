@@ -10,6 +10,7 @@ datasource db {
 
 // User/Kasir
 model User {
+<<<<<<< HEAD
   id            String   @id @default(cuid())
   name          String
   email         String   @unique
@@ -20,6 +21,20 @@ model User {
   modifications OrderModification[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+=======
+  id              String        @id @default(cuid())
+  name            String
+  email           String        @unique
+  password        String
+  role            String        @default("KASIR") // ADMIN, KASIR
+  isActive        Boolean       @default(true)
+  lastLoginAt     DateTime?
+  orders          Order[]
+  activityLogs    ActivityLog[] // Activities performed by this user
+  targetLogs      ActivityLog[] @relation("ActivityLogTargetUser") // Activities performed on this user
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+>>>>>>> 28b63c9c6a401b225097243578ca426a598375eb
 }
 
 // Kategori Menu
@@ -118,4 +133,18 @@ model Setting {
   currency    String   @default("IDR")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Log Aktivitas User
+model ActivityLog {
+  id           String    @id @default(cuid())
+  userId       String    // User yang melakukan aksi
+  user         User      @relation(fields: [userId], references: [id])
+  action       String    // Jenis aksi: LOGIN, LOGOUT, USER_CREATED, USER_UPDATED, USER_DEACTIVATED, PASSWORD_RESET, dll
+  details      String?   // Detail aksi dalam format JSON (opsional)
+  targetUserId String?   // User yang menjadi target aksi (jika ada)
+  targetUser   User?     @relation("ActivityLogTargetUser", fields: [targetUserId], references: [id])
+  ipAddress    String?   // IP address saat aksi dilakukan
+  userAgent    String?   // Browser/device info
+  createdAt    DateTime  @default(now())
 }
