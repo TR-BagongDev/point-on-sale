@@ -12,6 +12,18 @@ import {
   Clock,
   Calendar,
 } from "lucide-react";
+import { SalesTrendChart } from "@/components/analytics/SalesTrendChart";
+import { SalesByHourChart } from "@/components/analytics/SalesByHourChart";
+import { PaymentMethodPieChart } from "@/components/analytics/PaymentMethodPieChart";
+import { TopSellingItems } from "@/components/analytics/TopSellingItems";
+import { PeriodComparisonCards } from "@/components/analytics/PeriodComparisonCards";
+import type {
+  SalesTrendData,
+  SalesByHourData,
+  PaymentDistributionData,
+  ItemSalesData,
+  PeriodComparisonData,
+} from "@/lib/analytics";
 
 interface DashboardStats {
   todaySales: number;
@@ -43,6 +55,15 @@ export default function DashboardPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  // Analytics state
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [salesTrend, setSalesTrend] = useState<SalesTrendData[]>([]);
+  const [salesByHour, setSalesByHour] = useState<SalesByHourData[]>([]);
+  const [paymentDistribution, setPaymentDistribution] = useState<PaymentDistributionData[]>([]);
+  const [topItems, setTopItems] = useState<ItemSalesData[]>([]);
+  const [bottomItems, setBottomItems] = useState<ItemSalesData[]>([]);
+  const [periodComparison, setPeriodComparison] = useState<PeriodComparisonData | null>(null);
+
   useEffect(() => {
     // Set default dates to today
     const today = new Date().toISOString().split("T")[0];
@@ -58,6 +79,7 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     setLoading(true);
+    setAnalyticsLoading(true);
     try {
       // Fetch orders for selected date range
       const res = await fetch(`/api/order?date=${dateFrom}`);
@@ -83,10 +105,58 @@ export default function DashboardPage() {
           0
         ),
       });
+
+      // Fetch analytics data
+      await fetchAnalyticsData();
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
       setLoading(false);
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    try {
+      // Calculate previous period dates (same duration, immediately before)
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      const dayDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prevEndDate = new Date(startDate);
+      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      const prevStartDate = new Date(prevEndDate);
+      prevStartDate.setDate(prevStartDate.getDate() - dayDiff + 1);
+
+      const analyticsParams = new URLSearchParams({
+        startDate: dateFrom,
+        endDate: dateTo,
+        previousStartDate: prevStartDate.toISOString().split('T')[0],
+        previousEndDate: prevEndDate.toISOString().split('T')[0],
+      });
+
+      const analyticsRes = await fetch(`/api/analytics?${analyticsParams}`);
+      if (!analyticsRes.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+
+      const analytics = await analyticsRes.json();
+
+      // Update state with analytics data
+      setSalesTrend(analytics.salesTrend || []);
+      setSalesByHour(analytics.salesByHour || []);
+      setPaymentDistribution(analytics.paymentDistribution || []);
+      setTopItems(analytics.topItems || []);
+      setBottomItems(analytics.bottomItems || []);
+      setPeriodComparison(analytics.periodComparison || null);
+    } catch (error) {
+      console.error("Failed to fetch analytics data:", error);
+      // Set empty arrays on error to prevent rendering issues
+      setSalesTrend([]);
+      setSalesByHour([]);
+      setPaymentDistribution([]);
+      setTopItems([]);
+      setBottomItems([]);
+      setPeriodComparison(null);
     }
   };
 
@@ -174,6 +244,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Period Comparison Cards */}
+        {periodComparison && !analyticsLoading && (
+          <PeriodComparisonCards data={periodComparison} />
+        )}
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat) => (
@@ -193,6 +268,21 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <SalesTrendChart data={salesTrend} />
+          <SalesByHourChart data={salesByHour} />
+        </div>
+
+        {/* Items and Payment Distribution */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <TopSellingItems
+            topItems={topItems}
+            bottomItems={bottomItems}
+          />
+          <PaymentMethodPieChart data={paymentDistribution} />
         </div>
 
         {/* Recent Orders */}
