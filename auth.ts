@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { logUserLogin } from "@/lib/activity-log";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -38,6 +39,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },
         });
+
+        // Log login activity
+        await logUserLogin({ userId: user.id });
 
         return {
           id: user.id,
