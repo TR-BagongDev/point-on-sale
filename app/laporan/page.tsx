@@ -32,6 +32,7 @@ import {
   Printer,
 } from "lucide-react";
 import { printReceipt, type Order } from "@/lib/receipt";
+import { toast } from "@/lib/toast";
 
 interface LocalOrder {
   id: string;
@@ -161,7 +162,7 @@ export default function LaporanPage() {
       });
     } catch (error) {
       console.error("Gagal mencetak struk:", error);
-      alert("Gagal mencetak struk");
+      toast.error("Gagal mencetak struk");
     }
   };
 
