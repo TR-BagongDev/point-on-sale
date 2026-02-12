@@ -30,6 +30,7 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { OrderModificationDialog } from "@/components/order/OrderModificationDialog";
 
 interface LocalOrder {
   id: string;
@@ -51,7 +52,14 @@ interface LocalOrder {
     price: number;
     notes: string | null;
     menu: {
+      id: string;
       name: string;
+      price: number;
+      category: {
+        id: string;
+        name: string;
+        color: string | null;
+      };
     };
   }[];
 }
@@ -80,6 +88,8 @@ export default function PesananPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [editingOrder, setEditingOrder] = useState<LocalOrder | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     // Set default dates to today
@@ -146,6 +156,20 @@ export default function PesananPage() {
       DEBIT: "bg-purple-100 text-purple-700",
     };
     return styles[method] || "bg-gray-100 text-gray-700";
+  };
+
+  const handleEditOrder = (order: LocalOrder) => {
+    setEditingOrder(order);
+    setShowEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditingOrder(null);
+    setShowEditDialog(false);
+  };
+
+  const handleOrderUpdated = () => {
+    fetchOrders();
   };
 
   return (
@@ -300,6 +324,7 @@ export default function PesananPage() {
                                   size="sm"
                                   className="h-8 w-8 p-0"
                                   title="Edit Pesanan"
+                                  onClick={() => handleEditOrder(order)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -316,6 +341,16 @@ export default function PesananPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Order Modification Dialog */}
+      {editingOrder && (
+        <OrderModificationDialog
+          order={editingOrder}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onOrderUpdated={handleOrderUpdated}
+        />
+      )}
     </DashboardLayout>
   );
 }
