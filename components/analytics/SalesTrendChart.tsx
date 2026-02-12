@@ -66,36 +66,40 @@ export function SalesTrendChart({ data, className }: SalesTrendChartProps) {
   return (
     <Card className={cn("", className)}>
       <CardHeader>
-        <CardTitle>Tren Penjualan</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Tren Penjualan</CardTitle>
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={formatDate}
-                className="text-xs"
-              />
-              <YAxis
-                tickFormatter={formatCurrency}
-                className="text-xs"
-                width={100}
-              />
-              <Tooltip content={formatTooltip} />
-              <Line
-                type="monotone"
-                dataKey="total"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={{ fill: "hsl(var(--primary))", r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatDate}
+                  className="text-xs"
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  tickFormatter={formatCurrency}
+                  className="text-xs hidden sm:block"
+                  width={80}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip content={formatTooltip} />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+          <div className="flex h-[250px] items-center justify-center text-muted-foreground text-sm">
             Tidak ada data tersedia
           </div>
         )}

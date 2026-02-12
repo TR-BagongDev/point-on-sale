@@ -58,33 +58,38 @@ export function SalesByHourChart({ data, className }: SalesByHourChartProps) {
   return (
     <Card className={cn("", className)}>
       <CardHeader>
-        <CardTitle>Penjualan per Jam</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Penjualan per Jam</CardTitle>
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="hour"
-                tickFormatter={formatHour}
-                className="text-xs"
-              />
-              <YAxis
-                tickFormatter={formatCurrency}
-                className="text-xs"
-                width={100}
-              />
-              <Tooltip content={formatTooltip} />
-              <Bar
-                dataKey="total"
-                fill="hsl(var(--primary))"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="hour"
+                  tickFormatter={formatHour}
+                  className="text-xs"
+                  interval="preserveStartEnd"
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  tickFormatter={formatCurrency}
+                  className="text-xs hidden sm:block"
+                  width={80}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip content={formatTooltip} />
+                <Bar
+                  dataKey="total"
+                  fill="hsl(var(--primary))"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+          <div className="flex h-[250px] items-center justify-center text-muted-foreground text-sm">
             Tidak ada data tersedia
           </div>
         )}

@@ -338,16 +338,16 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout userName="Admin" userRole="ADMIN">
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Selamat datang di Warung POS Dashboard
             </p>
           </div>
-          <Button onClick={exportToCSV} variant="outline" disabled={loading || analyticsLoading}>
+          <Button onClick={exportToCSV} variant="outline" disabled={loading || analyticsLoading} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
             Export Analitik
           </Button>
@@ -367,25 +367,25 @@ export default function DashboardPage() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Dari:</span>
+                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm font-medium whitespace-nowrap">Dari:</span>
                 <Input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-40"
+                  className="w-full sm:w-40"
                   disabled={loading}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Sampai:</span>
+                <span className="text-sm font-medium whitespace-nowrap">Sampai:</span>
                 <Input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-40"
+                  className="w-full sm:w-40"
                   disabled={loading}
                 />
               </div>
@@ -405,12 +405,12 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {loading ? (
             // Loading skeletons
             statCards.map((stat) => (
               <Card key={stat.title}>
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <div className="h-4 bg-muted animate-pulse rounded w-24"></div>
@@ -427,16 +427,16 @@ export default function DashboardPage() {
             // Actual stats
             statCards.map((stat) => (
               <Card key={stat.title}>
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
                         {stat.title}
                       </p>
-                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-xl sm:text-2xl font-bold truncate">{stat.value}</p>
                     </div>
-                    <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    <div className={`p-2 sm:p-3 rounded-full ${stat.bgColor} flex-shrink-0 ml-2`}>
+                      <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -446,12 +446,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {analyticsLoading ? (
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle>Tren Penjualan</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Tren Penjualan</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-center h-64">
@@ -464,7 +464,7 @@ export default function DashboardPage() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Penjualan per Jam</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Penjualan per Jam</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-center h-64">
@@ -485,12 +485,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Items and Payment Distribution */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {analyticsLoading ? (
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle>Menu Terlaris</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Menu Terlaris</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-center h-64">
@@ -503,7 +503,7 @@ export default function DashboardPage() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Distribusi Pembayaran</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Distribusi Pembayaran</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-center h-64">
@@ -529,7 +529,7 @@ export default function DashboardPage() {
         {/* Recent Orders */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Clock className="h-5 w-5" />
               Pesanan Terbaru
             </CardTitle>
@@ -544,28 +544,28 @@ export default function DashboardPage() {
                 Belum ada pesanan untuk periode ini
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border hover:bg-muted/50 transition-colors gap-3"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 font-bold">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 font-bold flex-shrink-0">
                         {order.orderNumber.slice(-3)}
                       </div>
-                      <div>
-                        <p className="font-medium">{order.orderNumber}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm sm:text-base truncate">{order.orderNumber}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
                           oleh {order.user.name}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary-600">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:text-right">
+                      <p className="font-bold text-primary-600 text-sm sm:text-base">
                         {formatCurrency(order.total)}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                         {formatTime(order.createdAt)}
                       </p>
                     </div>

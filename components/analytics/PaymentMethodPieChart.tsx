@@ -74,6 +74,9 @@ export function PaymentMethodPieChart({
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+    // Only show labels on larger screens or for large percentages
+    if (percent < 0.1) return null;
+
     return (
       <text
         x={x}
@@ -81,7 +84,7 @@ export function PaymentMethodPieChart({
         fill="white"
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
-        className="text-xs font-semibold"
+        className="text-[10px] sm:text-xs font-semibold"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -91,41 +94,43 @@ export function PaymentMethodPieChart({
   return (
     <Card className={cn("", className)}>
       <CardHeader>
-        <CardTitle>Distribusi Metode Pembayaran</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Distribusi Metode Pembayaran</CardTitle>
       </CardHeader>
       <CardContent>
         {data && data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomizedLabel}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="total"
-              >
-                {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={formatTooltip} />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value) => (
-                  <span className="text-sm">{value}</span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="total"
+                >
+                  {data.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={formatTooltip} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value) => (
+                    <span className="text-xs sm:text-sm">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+          <div className="flex h-[250px] items-center justify-center text-muted-foreground text-sm">
             Tidak ada data tersedia
           </div>
         )}
