@@ -64,7 +64,7 @@ export default function KasirPage() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [discount, setDiscount] = useState(0);
 
-  const { items, addItem, removeItem, updateQuantity, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
+  const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
 
   useEffect(() => {
     fetchMenus();
@@ -270,12 +270,20 @@ export default function KasirPage() {
                 <ScrollArea className="flex-1 px-6">
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <div key={item.id} className="flex items-start gap-3 py-2">
+                      <div key={item.id} className="flex items-start gap-3 py-2 border-b pb-3 last:border-0">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{item.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {formatCurrency(item.price)}
                           </p>
+                          <Input
+                            type="text"
+                            placeholder="Catatan..."
+                            value={item.notes || ""}
+                            onChange={(e) => updateNotes(item.id, e.target.value)}
+                            className="mt-2 h-8 text-xs"
+                            maxLength={100}
+                          />
                         </div>
                         <div className="flex items-center gap-1">
                           <Button
