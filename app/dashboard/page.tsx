@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   DollarSign,
   ShoppingCart,
   Users,
   TrendingUp,
   Clock,
+  Calendar,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -38,18 +40,27 @@ export default function DashboardPage() {
   });
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
-    fetchDashboardData();
+    // Set default dates to today
+    const today = new Date().toISOString().split("T")[0];
+    setDateFrom(today);
+    setDateTo(today);
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Get today's date
-      const today = new Date().toISOString().split("T")[0];
+  useEffect(() => {
+    if (dateFrom) {
+      fetchDashboardData();
+    }
+  }, [dateFrom, dateTo]);
 
-      // Fetch orders for today
-      const res = await fetch(`/api/order?date=${today}`);
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch orders for selected date range
+      const res = await fetch(`/api/order?date=${dateFrom}`);
       const orders = await res.json();
 
       // Calculate stats
@@ -135,6 +146,33 @@ export default function DashboardPage() {
             Selamat datang di Warung POS Dashboard
           </p>
         </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Dari:</span>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-40"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Sampai:</span>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-40"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
