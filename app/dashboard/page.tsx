@@ -64,6 +64,7 @@ export default function DashboardPage() {
 
   // Analytics state
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [salesTrend, setSalesTrend] = useState<SalesTrendData[]>([]);
   const [salesByHour, setSalesByHour] = useState<SalesByHourData[]>([]);
   const [paymentDistribution, setPaymentDistribution] = useState<PaymentMethodData[]>([]);
@@ -87,6 +88,7 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true);
     setAnalyticsLoading(true);
+    setError(null);
     try {
       // Fetch orders for selected date range
       const params = new URLSearchParams({
@@ -94,6 +96,11 @@ export default function DashboardPage() {
         endDate: dateTo,
       });
       const res = await fetch(`/api/order?${params}`);
+
+      if (!res.ok) {
+        throw new Error('Gagal memuat data pesanan');
+      }
+
       const orders = await res.json();
 
       // Calculate stats
@@ -121,6 +128,7 @@ export default function DashboardPage() {
       await fetchAnalyticsData();
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data');
     } finally {
       setLoading(false);
       setAnalyticsLoading(false);
@@ -147,7 +155,7 @@ export default function DashboardPage() {
 
       const analyticsRes = await fetch(`/api/analytics?${analyticsParams}`);
       if (!analyticsRes.ok) {
-        throw new Error('Failed to fetch analytics');
+        throw new Error('Gagal memuat data analitik');
       }
 
       const analytics = await analyticsRes.json();
@@ -169,6 +177,7 @@ export default function DashboardPage() {
       setPeriodComparison(analytics.periodComparison || null);
     } catch (error) {
       console.error("Failed to fetch analytics data:", error);
+      setError(error instanceof Error ? error.message : 'Gagal memuat data analitik');
       // Set empty arrays on error to prevent rendering issues
       setSalesTrend([]);
       setSalesByHour([]);
@@ -338,11 +347,22 @@ export default function DashboardPage() {
               Selamat datang di Warung POS Dashboard
             </p>
           </div>
-          <Button onClick={exportToCSV} variant="outline">
+          <Button onClick={exportToCSV} variant="outline" disabled={loading || analyticsLoading}>
             <Download className="h-4 w-4 mr-2" />
             Export Analitik
           </Button>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <Card className="border-destructive bg-destructive/10">
+            <CardContent className="p-4">
+              <p className="text-sm text-destructive font-medium">
+                ⚠️ {error}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filters */}
         <Card>
@@ -356,6 +376,7 @@ export default function DashboardPage() {
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
                   className="w-40"
+                  disabled={loading}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -365,8 +386,15 @@ export default function DashboardPage() {
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
                   className="w-40"
+                  disabled={loading}
                 />
               </div>
+              {loading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span>Memuat data...</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -378,38 +406,124 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {statCards.map((stat) => (
-            <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {stat.title}
-                    </p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+          {loading ? (
+            // Loading skeletons
+            statCards.map((stat) => (
+              <Card key={stat.title}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-muted animate-pulse rounded w-24"></div>
+                      <div className="h-8 bg-muted animate-pulse rounded w-20"></div>
+                    </div>
+                    <div className={`p-3 rounded-full ${stat.bgColor} animate-pulse`}>
+                      <div className="h-6 w-6 bg-muted/50 rounded"></div>
+                    </div>
                   </div>
-                  <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            // Actual stats
+            statCards.map((stat) => (
+              <Card key={stat.title}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {stat.title}
+                      </p>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-full ${stat.bgColor}`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         {/* Charts */}
         <div className="grid gap-4 md:grid-cols-2">
-          <SalesTrendChart data={salesTrend} />
-          <SalesByHourChart data={salesByHour} />
+          {analyticsLoading ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tren Penjualan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center h-64">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground">Memuat data...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Penjualan per Jam</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center h-64">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground">Memuat data...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <SalesTrendChart data={salesTrend} />
+              <SalesByHourChart data={salesByHour} />
+            </>
+          )}
         </div>
 
         {/* Items and Payment Distribution */}
         <div className="grid gap-4 md:grid-cols-2">
-          <TopSellingItems
-            topItems={topItems}
-            bottomItems={bottomItems}
-          />
-          <PaymentMethodPieChart data={paymentDistribution} />
+          {analyticsLoading ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Menu Terlaris</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center h-64">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground">Memuat data...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribusi Pembayaran</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center h-64">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground">Memuat data...</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <TopSellingItems
+                topItems={topItems}
+                bottomItems={bottomItems}
+              />
+              <PaymentMethodPieChart data={paymentDistribution} />
+            </>
+          )}
         </div>
 
         {/* Recent Orders */}
