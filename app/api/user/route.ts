@@ -97,3 +97,82 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// PUT - Update user
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, name, email, role, isActive } = body;
+
+    // Validate required fields
+    if (!id) {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate role values if provided
+    if (role && !["ADMIN", "KASIR"].includes(role)) {
+      return NextResponse.json(
+        { error: "Role must be either ADMIN or KASIR" },
+        { status: 400 }
+      );
+    }
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if email already exists for another user
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (emailExists) {
+        return NextResponse.json(
+          { error: "Email already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update user
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(role && { role }),
+        ...(isActive !== undefined && { isActive }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return NextResponse.json(
+      { error: "Failed to update user" },
+      { status: 500 }
+    );
+  }
+}
