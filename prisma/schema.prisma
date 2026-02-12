@@ -60,7 +60,7 @@ model Order {
   discount     Float    @default(0)
   total        Float
   paymentMethod String  @default("CASH") // CASH, QRIS, DEBIT
-  status       String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  status       String   @default("PENDING") // PENDING, PREPARING, READY, COMPLETED, CANCELLED
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
