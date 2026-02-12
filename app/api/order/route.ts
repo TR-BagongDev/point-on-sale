@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         discount: parseFloat(discount ?? 0),
         total: parseFloat(total),
         paymentMethod: paymentMethod ?? "CASH",
-        status: "COMPLETED",
+        status: "PENDING",
         notes,
         items: {
           create: items.map(
