@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
+import { toast } from "@/lib/toast";
 
 interface Menu {
   id: string;
@@ -168,12 +169,14 @@ export default function KasirPage() {
         } catch (printError) {
           console.error("Print failed:", printError);
           // Still show success even if print fails
-          alert("Pesanan berhasil dibuat! (Gagal mencetak struk)");
+          toast.success("Pesanan berhasil dibuat!", {
+            description: "Gagal mencetak struk",
+          });
         }
       }
     } catch (error) {
       console.error("Checkout failed:", error);
-      alert("Gagal memproses pesanan");
+      toast.error("Gagal memproses pesanan");
     }
   };
 
