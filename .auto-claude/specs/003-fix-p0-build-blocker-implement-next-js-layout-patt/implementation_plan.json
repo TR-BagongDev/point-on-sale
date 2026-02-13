@@ -495,9 +495,9 @@
     "ready_for_qa_revalidation": true
   },
   "executionPhase": "complete",
-  "status": "complete",
-  "planStatus": "complete",
-  "updated_at": "2026-02-13T20:15:00.000Z",
+  "status": "done",
+  "planStatus": "completed",
+  "updated_at": "2026-02-13T20:09:32.078Z",
   "xstateState": "complete",
   "lastEvent": {
     "eventId": "qa-fixes-complete",
@@ -541,7 +541,6 @@
       "merge_conflict": 3
     }
   },
-  "reviewReason": "completed",
   "stagedAt": "2026-02-13T20:07:30.402Z",
   "stagedInMainProject": true
 }
