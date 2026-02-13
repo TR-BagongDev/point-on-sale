@@ -13,7 +13,7 @@ const protectedRoutes = [
   "/pengaturan",
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { nextUrl } = req;
   const pathname = nextUrl.pathname;
   const token = await getToken({
