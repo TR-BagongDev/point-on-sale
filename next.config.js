@@ -2,9 +2,8 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
+  // Disable turbopack for worktree compatibility (symlink node_modules issue)
+  turbopack: false,
   images: {
     remotePatterns: [
       {
