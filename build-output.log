@@ -2,46 +2,62 @@
 > point-on-sale@1.0.0 build
 > next build
 
+⚠ Invalid next.config.js options detected: 
+⚠     Expected object, received boolean at "turbopack"
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\TRUST\Documents\point-on-sale\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\TRUST\Documents\point-on-sale\.auto-claude\worktrees\tasks\003-fix-p0-build-blocker-implement-next-js-layout-patt\package-lock.json
+
 ▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
 
   Creating an optimized production build ...
-✓ Compiled successfully in 10.9s
-  Running TypeScript ...
-  Collecting page data using 11 workers ...
-  Generating static pages using 11 workers (0/18) ...
-  Generating static pages using 11 workers (4/18) 
-  Generating static pages using 11 workers (8/18) 
-  Generating static pages using 11 workers (13/18) 
-✓ Generating static pages using 11 workers (18/18) in 916.4ms
-  Finalizing page optimization ...
 
-Route (app)
-┌ ○ /
-├ ○ /_not-found
-├ ƒ /api/analytics
-├ ƒ /api/auth/[...nextauth]
-├ ƒ /api/category
-├ ƒ /api/menu
-├ ƒ /api/order
-├ ƒ /api/order/[id]
-├ ƒ /api/order/[id]/history
-├ ƒ /api/order/[id]/items
-├ ƒ /api/receipt-template
-├ ƒ /api/settings
-├ ƒ /api/user
-├ ƒ /api/user/[id]/reset-password
-├ ○ /dashboard
-├ ○ /kasir
-├ ○ /laporan
-├ ○ /login
-├ ○ /menu
-├ ○ /pengaturan
-├ ○ /pesanan
-└ ○ /users
+> Build error occurred
+Error: Turbopack build failed with 3 errors:
+./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/dashboard/page.tsx:577:6
+Parsing ecmascript source code failed
+[0m [90m 575 |[39m         [33m<[39m[33m/[39m[33mCard[39m[33m>[39m
+ [90m 576 |[39m       [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+[31m[1m>[22m[39m[90m 577 |[39m     [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m     |[39m      [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 578 |[39m   )[33m;[39m
+ [90m 579 |[39m }
+ [90m 580 |[39m[0m
+
+Unterminated regexp literal
 
 
-ƒ Proxy (Middleware)
+./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/laporan/page.tsx:410:6
+Parsing ecmascript source code failed
+[0m [90m 408 |[39m         [33m<[39m[33m/[39m[33mCard[39m[33m>[39m
+ [90m 409 |[39m       [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+[31m[1m>[22m[39m[90m 410 |[39m     [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m     |[39m      [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 411 |[39m   )[33m;[39m
+ [90m 412 |[39m }
+ [90m 413 |[39m[0m
 
-○  (Static)   prerendered as static content
-ƒ  (Dynamic)  server-rendered on demand
+Unterminated regexp literal
 
+
+./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/menu/page.tsx:295:7
+Parsing ecmascript source code failed
+[0m [90m 293 |[39m       [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m 294 |[39m
+[31m[1m>[22m[39m[90m 295 |[39m       {[90m/* Add/Edit Dialog */[39m}
+ [90m     |[39m       [31m[1m^[22m[39m
+ [90m 296 |[39m       [33m<[39m[33mDialog[39m open[33m=[39m{showDialog} onOpenChange[33m=[39m{setShowDialog}[33m>[39m
+ [90m 297 |[39m         [33m<[39m[33mDialogContent[39m[33m>[39m
+ [90m 298 |[39m           [33m<[39m[33mDialogHeader[39m[33m>[39m[0m
+
+Expected ',', got '{'
+
+
+    at <unknown> (./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/dashboard/page.tsx:577:6)
+    at <unknown> (./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/laporan/page.tsx:410:6)
+    at <unknown> (./.auto-claude/worktrees/tasks/003-fix-p0-build-blocker-implement-next-js-layout-patt/app/menu/page.tsx:295:7)
