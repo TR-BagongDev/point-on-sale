@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return null;
+}
 
 // GET - Get all users with role, status, and last login info
 export async function GET() {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -33,6 +51,9 @@ export async function GET() {
 // POST - Create new user
 export async function POST(request: NextRequest) {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const body = await request.json();
     const { name, email, password, role } = body;
 
@@ -101,6 +122,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update user
 export async function PUT(request: NextRequest) {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const body = await request.json();
     const { id, name, email, role, isActive } = body;
 

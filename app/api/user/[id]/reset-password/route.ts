@@ -7,10 +7,20 @@ import { logPasswordReset } from "@/lib/activity-log";
 // POST - Reset user password
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await params;
     const body = await request.json();
     const { newPassword } = body;
 
@@ -63,24 +73,19 @@ export async function POST(
       },
     });
 
-    // Get current session for activity logging
-    const session = await auth();
-    const currentUserId = session?.user?.id;
-
     // Log password reset activity
-    if (currentUserId) {
-      const ipAddress = request.headers.get("x-forwarded-for") ||
-                       request.headers.get("x-real-ip") ||
-                       undefined;
-      const userAgent = request.headers.get("user-agent") || undefined;
+    const ipAddress =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
 
-      await logPasswordReset({
-        userId: currentUserId,
-        targetUserId: id,
-        ipAddress,
-        userAgent,
-      });
-    }
+    await logPasswordReset({
+      userId: session.user.id,
+      targetUserId: id,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({
       success: true,
