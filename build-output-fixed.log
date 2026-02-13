@@ -1,0 +1,55 @@
+
+> point-on-sale@1.0.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\TRUST\Documents\point-on-sale\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\TRUST\Documents\point-on-sale\.auto-claude\worktrees\tasks\003-fix-p0-build-blocker-implement-next-js-layout-patt\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.9s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/18) ...
+  Generating static pages using 11 workers (4/18) 
+  Generating static pages using 11 workers (8/18) 
+  Generating static pages using 11 workers (13/18) 
+✓ Generating static pages using 11 workers (18/18) in 1250.9ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/analytics
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/category
+├ ƒ /api/menu
+├ ƒ /api/order
+├ ƒ /api/order/[id]
+├ ƒ /api/order/[id]/history
+├ ƒ /api/order/[id]/items
+├ ƒ /api/receipt-template
+├ ƒ /api/settings
+├ ƒ /api/user
+├ ƒ /api/user/[id]/reset-password
+├ ƒ /dashboard
+├ ○ /kasir
+├ ƒ /laporan
+├ ○ /login
+├ ƒ /menu
+├ ○ /pengaturan
+├ ○ /pesanan
+└ ○ /users
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

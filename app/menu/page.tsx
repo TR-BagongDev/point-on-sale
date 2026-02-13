@@ -290,7 +290,6 @@ export default function MenuPage() {
             ))}
           </div>
         )}
-      </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

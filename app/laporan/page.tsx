@@ -406,7 +406,6 @@ export default function LaporanPage() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   );
 }
