@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return null;
+}
 
 // GET - Get store settings
 export async function GET() {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const settings = await prisma.setting.findFirst();
     return NextResponse.json(settings);
   } catch (error) {
@@ -18,6 +36,9 @@ export async function GET() {
 // PUT - Update store settings
 export async function PUT(request: NextRequest) {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const body = await request.json();
     const { storeName, address, phone, taxRate } = body;
 

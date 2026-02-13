@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return null;
+}
 
 // GET - Get receipt template
 export async function GET() {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const template = await prisma.receiptTemplate.findFirst({
       where: { isActive: true },
     });
@@ -20,6 +38,9 @@ export async function GET() {
 // PUT - Update receipt template
 export async function PUT(request: NextRequest) {
   try {
+    const guard = await requireAdmin();
+    if (guard) return guard;
+
     const body = await request.json();
     const {
       header,

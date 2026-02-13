@@ -68,12 +68,7 @@ export default function KasirPage() {
 
   const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
 
-  useEffect(() => {
-    fetchMenus();
-    fetchCategories();
-  }, []);
-
-  const fetchMenus = async () => {
+  async function fetchMenus() {
     try {
       const res = await fetch("/api/menu");
       const data = await res.json();
@@ -81,9 +76,9 @@ export default function KasirPage() {
     } catch (error) {
       console.error("Failed to fetch menus:", error);
     }
-  };
+  }
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
       const res = await fetch("/api/category");
       const data = await res.json();
@@ -94,7 +89,12 @@ export default function KasirPage() {
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchMenus();
+    fetchCategories();
+  }, []);
 
   const handleAddToCart = (menu: Menu) => {
     addItem({

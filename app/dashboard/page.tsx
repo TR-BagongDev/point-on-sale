@@ -258,7 +258,7 @@ export default function DashboardPage() {
     ]);
 
     // Period comparison section
-    const comparisonRows = [];
+    const comparisonRows: string[][] = [];
     if (periodComparison) {
       comparisonRows.push(
         ["Perbandingan Periode"],
@@ -289,7 +289,7 @@ export default function DashboardPage() {
       "Menu,Jumlah,Pendapatan",
       ...topItemsRows.map(row => row.join(",")),
       "",
-      ...comparisonRows,
+      ...comparisonRows.map((row) => row.join(",")),
     ];
 
     const csvContent = allRows.join("\n");

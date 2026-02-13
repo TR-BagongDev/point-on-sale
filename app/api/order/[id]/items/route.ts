@@ -28,7 +28,7 @@ async function recalculateOrderTotals(orderId: string) {
   });
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum: number, item: (typeof items)[number]) => sum + item.price * item.quantity,
     0
   );
 
@@ -53,9 +53,10 @@ async function recalculateOrderTotals(orderId: string) {
 // POST - Add item to order
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { menuId, quantity, notes } = body;
 
@@ -69,7 +70,7 @@ export async function POST(
 
     // Check if order exists and can be modified
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { items: true },
     });
 
@@ -108,10 +109,10 @@ export async function POST(
 
     // Check if item already exists in order
     const existingItem = order.items.find(
-      (item) => item.menuId === menuId && item.notes === notes
+      (item: any) => item.menuId === menuId && item.notes === notes
     );
 
-    let updatedItem;
+    let updatedItem: any;
 
     if (existingItem) {
       // Update quantity of existing item
@@ -123,7 +124,7 @@ export async function POST(
 
       // Track modification
       await trackModification(
-        params.id,
+        id,
         order.userId,
         "QUANTITY_CHANGED",
         `Updated quantity for ${menu.name} from ${existingItem.quantity} to ${existingItem.quantity + quantity}`,
@@ -139,7 +140,7 @@ export async function POST(
       // Add new item to order
       updatedItem = await prisma.orderItem.create({
         data: {
-          orderId: params.id,
+          orderId: id,
           menuId,
           quantity,
           price: menu.price,
@@ -150,7 +151,7 @@ export async function POST(
 
       // Track modification
       await trackModification(
-        params.id,
+        id,
         order.userId,
         "ITEM_ADDED",
         `Added ${quantity}x ${menu.name} to order`,
@@ -164,7 +165,7 @@ export async function POST(
     }
 
     // Recalculate order totals
-    await recalculateOrderTotals(params.id);
+    await recalculateOrderTotals(id);
 
     // Return updated item
     return NextResponse.json(updatedItem, { status: 201 });
@@ -180,9 +181,10 @@ export async function POST(
 // PATCH - Update item quantity or notes
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { itemId, quantity, notes } = body;
 
@@ -196,7 +198,7 @@ export async function PATCH(
 
     // Check if order exists and can be modified
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { items: { include: { menu: true } } },
     });
 
@@ -215,7 +217,7 @@ export async function PATCH(
     }
 
     // Find the item
-    const item = order.items.find((i) => i.id === itemId);
+    const item = order.items.find((i: any) => i.id === itemId);
 
     if (!item) {
       return NextResponse.json(
@@ -238,7 +240,7 @@ export async function PATCH(
 
       // Track quantity change
       await trackModification(
-        params.id,
+        id,
         order.userId,
         "QUANTITY_CHANGED",
         `Updated quantity for ${item.menu.name} from ${item.quantity} to ${quantity}`,
@@ -257,7 +259,7 @@ export async function PATCH(
 
       // Track notes change
       await trackModification(
-        params.id,
+        id,
         order.userId,
         "NOTES_UPDATED",
         `Updated notes for ${item.menu.name}`,
@@ -280,7 +282,7 @@ export async function PATCH(
 
     // Recalculate order totals if quantity changed
     if (quantity !== undefined) {
-      await recalculateOrderTotals(params.id);
+      await recalculateOrderTotals(id);
     }
 
     return NextResponse.json(updatedItem);
@@ -296,9 +298,10 @@ export async function PATCH(
 // DELETE - Remove item from order
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get("itemId");
 
@@ -311,7 +314,7 @@ export async function DELETE(
 
     // Check if order exists and can be modified
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { items: { include: { menu: true } } },
     });
 
@@ -330,7 +333,7 @@ export async function DELETE(
     }
 
     // Find the item
-    const item = order.items.find((i) => i.id === itemId);
+    const item = order.items.find((i: any) => i.id === itemId);
 
     if (!item) {
       return NextResponse.json(
@@ -346,7 +349,7 @@ export async function DELETE(
 
     // Track modification
     await trackModification(
-      params.id,
+      id,
       order.userId,
       "ITEM_REMOVED",
       `Removed ${item.quantity}x ${item.menu.name} from order`,
@@ -359,7 +362,7 @@ export async function DELETE(
     );
 
     // Recalculate order totals
-    await recalculateOrderTotals(params.id);
+    await recalculateOrderTotals(id);
 
     return NextResponse.json({ success: true, message: "Item removed" });
   } catch (error) {

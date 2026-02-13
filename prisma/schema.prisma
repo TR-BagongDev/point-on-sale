@@ -1,7 +1,8 @@
 // POS Warung Nasi Goreng - Database Schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
@@ -10,18 +11,6 @@ datasource db {
 
 // User/Kasir
 model User {
-<<<<<<< HEAD
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  password      String
-  role          String   @default("KASIR") // ADMIN, KASIR
-  isActive      Boolean  @default(true)
-  orders        Order[]
-  modifications OrderModification[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-=======
   id              String        @id @default(cuid())
   name            String
   email           String        @unique
@@ -30,11 +19,11 @@ model User {
   isActive        Boolean       @default(true)
   lastLoginAt     DateTime?
   orders          Order[]
+  modifications   OrderModification[]
   activityLogs    ActivityLog[] // Activities performed by this user
   targetLogs      ActivityLog[] @relation("ActivityLogTargetUser") // Activities performed on this user
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
->>>>>>> 28b63c9c6a401b225097243578ca426a598375eb
 }
 
 // Kategori Menu
