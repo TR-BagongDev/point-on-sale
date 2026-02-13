@@ -336,9 +336,9 @@
   "executionPhase": "complete",
   "status": "done",
   "planStatus": "completed",
-  "updated_at": "2026-02-13T14:50:26.834Z",
+  "updated_at": "2026-02-13T14:58:44.260Z",
   "last_updated": "2026-02-13T14:36:37.335101+00:00",
-  "xstateState": "human_review",
+  "xstateState": "done",
   "lastEvent": {
     "eventId": "116fb823-3a48-4674-a5d2-a6d13c9cc79f",
     "sequence": 1,
@@ -359,6 +359,5 @@
     "last_iteration": 1,
     "last_status": "approved",
     "issues_by_type": {}
-  },
-  "reviewReason": "completed"
+  }
 }
