@@ -322,15 +322,43 @@
     }
   },
   "qa_signoff": {
-    "status": "verified",
-    "notes": "End-to-end verification completed via comprehensive static code analysis. All authentication components verified and functioning as designed. Manual runtime testing recommended for main project environment.",
-    "verified_by": "auto-claude",
-    "verified_at": "2026-02-13T14:30:00.000000+00:00",
-    "all_tests_passed": true
+    "status": "approved",
+    "qa_session": 0,
+    "issues_found": [
+      {
+        "description": "None"
+      }
+    ],
+    "tests_passed": {},
+    "timestamp": "2026-02-13T14:36:37.335101+00:00",
+    "ready_for_qa_revalidation": false
   },
   "executionPhase": "complete",
-  "status": "complete",
-  "planStatus": "complete",
-  "updated_at": "2026-02-13T14:30:00.000000+00:00",
-  "last_updated": "2026-02-13T14:30:00.000000+00:00"
+  "status": "done",
+  "planStatus": "completed",
+  "updated_at": "2026-02-13T14:50:26.834Z",
+  "last_updated": "2026-02-13T14:36:37.335101+00:00",
+  "xstateState": "human_review",
+  "lastEvent": {
+    "eventId": "116fb823-3a48-4674-a5d2-a6d13c9cc79f",
+    "sequence": 1,
+    "type": "QA_PASSED",
+    "timestamp": "2026-02-13T14:37:05.973300+00:00"
+  },
+  "qa_iteration_history": [
+    {
+      "iteration": 1,
+      "status": "approved",
+      "timestamp": "2026-02-13T14:37:05.944527+00:00",
+      "issues": [],
+      "duration_seconds": 385.66
+    }
+  ],
+  "qa_stats": {
+    "total_iterations": 1,
+    "last_iteration": 1,
+    "last_status": "approved",
+    "issues_by_type": {}
+  },
+  "reviewReason": "completed"
 }
