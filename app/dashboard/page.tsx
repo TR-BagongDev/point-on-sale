@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -337,9 +336,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <DashboardLayout userName="Admin" userRole="ADMIN">
-      <div className="space-y-6 overflow-x-hidden">
-        {/* Header */}
+    <div className="space-y-6 overflow-x-hidden">
+      {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -576,6 +574,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }
