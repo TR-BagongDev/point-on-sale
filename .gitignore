@@ -1,5 +1,7 @@
 # Auto Claude data directory
 .auto-claude/
+.kilocode/
+.kilocodemodes
 
 # Auto Claude generated files
 .claude
