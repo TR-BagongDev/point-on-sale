@@ -1,5 +1,3 @@
-// POS Warung Nasi Goreng - Database Schema
-
 generator client {
   provider   = "prisma-client-js"
   engineType = "binary"
@@ -9,93 +7,92 @@ datasource db {
   provider = "postgresql"
 }
 
-// User/Kasir
 model User {
-  id              String        @id @default(cuid())
-  name            String
-  email           String        @unique
-  password        String
-  role            String        @default("KASIR") // ADMIN, KASIR
-  isActive        Boolean       @default(true)
-  lastLoginAt     DateTime?
-  orders          Order[]
-  modifications   OrderModification[]
-  activityLogs    ActivityLog[] // Activities performed by this user
-  targetLogs      ActivityLog[] @relation("ActivityLogTargetUser") // Activities performed on this user
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String              @id @default(cuid())
+  name          String
+  email         String              @unique
+  password      String
+  role          String              @default("KASIR")
+  isActive      Boolean             @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  orders        Order[]
+  modifications OrderModification[]
+  activityLogs  ActivityLog[]       @relation("UserActivityLog")
+  targetLogs    ActivityLog[]       @relation("TargetUserActivityLog")
 }
 
-// Kategori Menu
 model Category {
-  id     String @id @default(cuid())
-  name   String
-  icon   String?
-  color  String?
-  menus  Menu[]
-  order  Int    @default(0)
+  id    String  @id @default(cuid())
+  name  String
+  icon  String?
+  color String?
+  order Int     @default(0)
+
+  menus Menu[]
 }
 
-// Menu Item
 model Menu {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   description String?
   price       Float
   image       String?
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  isAvailable Boolean  @default(true)
+  isAvailable Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  category    Category    @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
-// Order/Pesanan
 model Order {
-  id           String   @id @default(cuid())
-  orderNumber  String   @unique
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  items        OrderItem[]
+  id            String              @id @default(cuid())
+  orderNumber   String              @unique
+  userId        String
+  subtotal      Float
+  tax           Float               @default(0)
+  discount      Float               @default(0)
+  total         Float
+  paymentMethod String              @default("CASH")
+  status        String              @default("PENDING")
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id])
+  items         OrderItem[]
   modifications OrderModification[]
-  subtotal     Float
-  tax          Float    @default(0)
-  discount     Float    @default(0)
-  total        Float
-  paymentMethod String  @default("CASH") // CASH, QRIS, DEBIT
-  status       String   @default("PENDING") // PENDING, PREPARING, READY, COMPLETED, CANCELLED
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }
 
-// Order Item
 model OrderItem {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   orderId  String
-  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuId   String
-  menu     Menu   @relation(fields: [menuId], references: [id])
   quantity Int
   price    Float
   notes    String?
+
+  menu     Menu    @relation(fields: [menuId], references: [id])
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
-// Order Modification History
 model OrderModification {
   id          String   @id @default(cuid())
   orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  action      String   // ITEM_ADDED, ITEM_REMOVED, QUANTITY_CHANGED, STATUS_CHANGED, NOTES_UPDATED, ORDER_UPDATED
-  description String   // Human-readable description of what changed
-  changes     String?  // JSON string storing specific details (oldValue, newValue, fieldName)
+  action      String
+  description String
+  changes     String?
   createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
 }
 
-// Template Struk
 model ReceiptTemplate {
   id          String   @id @default(cuid())
   name        String
@@ -106,34 +103,33 @@ model ReceiptTemplate {
   showTime    Boolean  @default(true)
   showCashier Boolean  @default(true)
   showTax     Boolean  @default(true)
-  paperWidth  Int      @default(80) // 58mm or 80mm
+  paperWidth  Int      @default(80)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// Pengaturan Toko
 model Setting {
-  id          String   @id @default(cuid())
-  storeName   String
-  address     String?
-  phone       String?
-  taxRate     Float    @default(0)
-  currency    String   @default("IDR")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  storeName String
+  address   String?
+  phone     String?
+  taxRate   Float    @default(0)
+  currency  String   @default("IDR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// Log Aktivitas User
 model ActivityLog {
-  id           String    @id @default(cuid())
-  userId       String    // User yang melakukan aksi
-  user         User      @relation(fields: [userId], references: [id])
-  action       String    // Jenis aksi: LOGIN, LOGOUT, USER_CREATED, USER_UPDATED, USER_DEACTIVATED, PASSWORD_RESET, dll
-  details      String?   // Detail aksi dalam format JSON (opsional)
-  targetUserId String?   // User yang menjadi target aksi (jika ada)
-  targetUser   User?     @relation("ActivityLogTargetUser", fields: [targetUserId], references: [id])
-  ipAddress    String?   // IP address saat aksi dilakukan
-  userAgent    String?   // Browser/device info
-  createdAt    DateTime  @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  action       String
+  details      String?
+  targetUserId String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user        User?    @relation("UserActivityLog", fields: [userId], references: [id])
+  targetUser  User?    @relation("TargetUserActivityLog", fields: [targetUserId], references: [id])
 }
