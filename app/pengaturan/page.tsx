@@ -137,7 +137,7 @@ export default function PengaturanPage() {
   };
 
   return (
-    <DashboardLayout userName="Admin" userRole="ADMIN">
+    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
