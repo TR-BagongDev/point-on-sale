@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   ShoppingCart,
@@ -49,6 +50,10 @@ interface SidebarProps {
 export function Sidebar({ userName = "Kasir", userRole = "KASIR" }: SidebarProps) {
   const pathname = usePathname();
 
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-gradient-to-b from-primary-700 to-primary-900 text-white shadow-xl">
       {/* Logo */}
@@ -94,7 +99,11 @@ export function Sidebar({ userName = "Kasir", userRole = "KASIR" }: SidebarProps
             <p className="truncate text-sm font-medium">{userName}</p>
             <p className="text-xs text-primary-300">{userRole}</p>
           </div>
-          <button className="rounded-lg p-2 text-primary-300 hover:bg-white/10 hover:text-white transition-colors">
+          <button
+            onClick={handleLogout}
+            className="rounded-lg p-2 text-primary-300 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Logout"
+          >
             <LogOut className="h-5 w-5" />
           </button>
         </div>
