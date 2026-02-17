@@ -37,6 +37,7 @@ import {
 import { cn } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
 import { toast } from "@/lib/toast";
+import { useAccessibility } from "@/lib/accessibility-context";
 
 interface Menu {
   id: string;
@@ -64,6 +65,7 @@ interface Category {
 const TAX_RATE = 10; // 10% Pajak
 
 export function KasirClient() {
+  const { simpleMode } = useAccessibility();
   const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -358,17 +360,19 @@ export function KasirClient() {
               </ScrollArea>
 
               <div className="p-6 border-t">
-                {/* Discount Input */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm text-muted-foreground">Diskon:</span>
-                  <Input
-                    type="number"
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                    className="h-8 w-24"
-                    placeholder="0"
-                  />
-                </div>
+                {/* Discount Input - Hidden in Simple Mode */}
+                {!simpleMode && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sm text-muted-foreground">Diskon:</span>
+                    <Input
+                      type="number"
+                      value={discount || ""}
+                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                      className="h-8 w-24"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
 
                 <Separator className="my-3" />
 
@@ -437,18 +441,21 @@ export function KasirClient() {
           <DialogHeader>
             <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
-              <Textarea
-                placeholder="Tambahkan catatan untuk pesanan ini..."
-                value={orderNotes}
-                onChange={(e) => setOrderNotes(e.target.value)}
-                maxLength={200}
-                rows={3}
-              />
+          {/* Order Notes - Hidden in Simple Mode */}
+          {!simpleMode && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
+                <Textarea
+                  placeholder="Tambahkan catatan untuk pesanan ini..."
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  maxLength={200}
+                  rows={3}
+                />
+              </div>
             </div>
-          </div>
+          )}
           <div className="grid grid-cols-3 gap-3 py-4">
             <Tooltip>
               <TooltipTrigger asChild>
