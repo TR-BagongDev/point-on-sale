@@ -26,6 +26,7 @@ import {
   ShoppingCart,
   Search,
   Printer,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
@@ -154,6 +155,11 @@ export function KasirClient() {
         setDiscount(0);
         setOrderNotes("");
 
+        // Show success message
+        toast.success("Pesanan berhasil dibuat!", {
+          description: `Total: ${formatCurrency(total)}`,
+        });
+
         // Auto-print receipt
         try {
           printReceipt({
@@ -172,15 +178,17 @@ export function KasirClient() {
         } catch (printError) {
           console.error("Print failed:", printError);
           // Still show success even if print fails
-          toast.success("Pesanan berhasil dibuat!", {
-            description: "Gagal mencetak struk",
-          });
         }
       }
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error("Gagal memproses pesanan");
     }
+  };
+
+  const handleQuickCheckout = async () => {
+    // Quick checkout with default CASH payment method
+    await handleCheckout("CASH");
   };
 
   return (
@@ -359,12 +367,22 @@ export function KasirClient() {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full mt-4 h-12 text-lg bg-primary-600 hover:bg-primary-700"
-                  onClick={() => setShowCheckout(true)}
-                >
-                  Bayar Sekarang
-                </Button>
+                <div className="space-y-2 mt-4">
+                  <Button
+                    className="w-full h-12 text-lg bg-primary-600 hover:bg-primary-700 shadow-lg"
+                    onClick={handleQuickCheckout}
+                  >
+                    <Zap className="mr-2 h-5 w-5" />
+                    Bayar Sekarang
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm"
+                    onClick={() => setShowCheckout(true)}
+                  >
+                    Pilih Metode Lain
+                  </Button>
+                </div>
               </div>
             </>
           )}
