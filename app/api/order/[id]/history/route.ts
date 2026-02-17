@@ -9,6 +9,14 @@ export async function GET(
   try {
     const { id: orderId } = await params;
 
+    // Validate orderId parameter
+    if (!orderId || typeof orderId !== "string") {
+      return NextResponse.json(
+        { error: "Valid order ID is required" },
+        { status: 400 }
+      );
+    }
+
     // Verify the order exists
     const order = await prisma.order.findUnique({
       where: { id: orderId },
