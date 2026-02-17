@@ -14,14 +14,13 @@ model User {
   password      String
   role          String              @default("KASIR")
   isActive      Boolean             @default(true)
-  lastLoginAt   DateTime?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-
+  lastLoginAt   DateTime?
+  targetLogs    ActivityLog[]       @relation("TargetUserActivityLog")
+  activityLogs  ActivityLog[]       @relation("UserActivityLog")
   orders        Order[]
   modifications OrderModification[]
-  activityLogs  ActivityLog[]       @relation("UserActivityLog")
-  targetLogs    ActivityLog[]       @relation("TargetUserActivityLog")
 }
 
 model Category {
@@ -30,7 +29,6 @@ model Category {
   icon  String?
   color String?
   order Int     @default(0)
-
   menus Menu[]
 }
 
@@ -44,7 +42,6 @@ model Menu {
   isAvailable Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
   category    Category    @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
 }
@@ -62,7 +59,6 @@ model Order {
   notes         String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-
   user          User                @relation(fields: [userId], references: [id])
   items         OrderItem[]
   modifications OrderModification[]
@@ -75,7 +71,6 @@ model OrderItem {
   quantity Int
   price    Float
   notes    String?
-
   menu     Menu    @relation(fields: [menuId], references: [id])
   order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
@@ -88,7 +83,6 @@ model OrderModification {
   description String
   changes     String?
   createdAt   DateTime @default(now())
-
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id])
 }
@@ -129,7 +123,6 @@ model ActivityLog {
   ipAddress    String?
   userAgent    String?
   createdAt    DateTime @default(now())
-
-  user        User?    @relation("UserActivityLog", fields: [userId], references: [id])
-  targetUser  User?    @relation("TargetUserActivityLog", fields: [targetUserId], references: [id])
+  targetUser   User?    @relation("TargetUserActivityLog", fields: [targetUserId], references: [id])
+  user         User     @relation("UserActivityLog", fields: [userId], references: [id])
 }
