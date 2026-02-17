@@ -247,7 +247,7 @@ export default function MenuPage() {
                               <h3 className="font-semibold truncate">{menu.name}</h3>
                               <Badge
                                 variant={menu.isAvailable ? "default" : "secondary"}
-                                className={`cursor-pointer ${
+                                className={`cursor-pointer min-h-[44px] px-3 flex items-center justify-center ${
                                   menu.isAvailable
                                     ? "bg-green-500 hover:bg-green-600"
                                     : "bg-gray-400"
@@ -268,6 +268,7 @@ export default function MenuPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-11 w-11 min-h-[44px] min-w-[44px]"
                               onClick={() => handleOpenDialog(menu)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -275,7 +276,7 @@ export default function MenuPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-destructive hover:text-destructive"
+                              className="h-11 w-11 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
                               onClick={() => handleDelete(menu.id)}
                             >
                               <Trash2 className="h-4 w-4" />
