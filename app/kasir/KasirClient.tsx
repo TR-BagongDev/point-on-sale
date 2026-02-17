@@ -223,19 +223,19 @@ export function KasirClient() {
             {filteredMenus.map((menu) => (
               <Card
                 key={menu.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group min-h-[44px]"
                 onClick={() => handleAddToCart(menu)}
               >
-                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center min-h-[120px]">
                   {menu.image ? (
                     <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-4xl">🍜</span>
+                    <span className="text-5xl">🍜</span>
                   )}
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold text-sm truncate">{menu.name}</h3>
-                  <p className="text-primary-600 font-bold mt-1">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-base truncate leading-tight">{menu.name}</h3>
+                  <p className="text-primary-600 font-bold text-lg mt-2">
                     {formatCurrency(menu.price)}
                   </p>
                 </CardContent>
@@ -287,33 +287,33 @@ export function KasirClient() {
                           maxLength={100}
                         />
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-11 w-11"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-8 text-center text-sm font-medium">
+                        <span className="w-10 text-center text-base font-medium">
                           {item.quantity}
                         </span>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-11 w-11"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          className="h-11 w-11 text-destructive hover:text-destructive"
                           onClick={() => removeItem(item.id)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
