@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Loading } from "@/components/ui/loading";
 import { Users, UserCheck, UserX, Shield } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 interface User {
   id: string;
@@ -28,10 +30,13 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await fetch("/api/user");
+      if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      toast.error("Gagal memuat pengguna", {
+        description: "Terjadi kesalahan saat mengambil data pengguna",
+      });
     } finally {
       setLoading(false);
     }
@@ -103,8 +108,8 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Memuat data...
+              <div className="flex justify-center py-8">
+                <Loading />
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
