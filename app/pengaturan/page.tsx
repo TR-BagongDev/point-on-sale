@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReceiptPreview } from "@/components/ReceiptPreview";
+import { AccessibilityToggle } from "@/components/accessibility/AccessibilityToggle";
 import {
   Settings,
   Store,
@@ -159,7 +160,7 @@ export default function PengaturanPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="store" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
             <TabsTrigger value="store" className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               Toko
@@ -171,6 +172,10 @@ export default function PengaturanPage() {
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Akun
+            </TabsTrigger>
+            <TabsTrigger value="accessibility" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Aksesibilitas
             </TabsTrigger>
           </TabsList>
 
@@ -431,6 +436,11 @@ export default function PengaturanPage() {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Accessibility Settings */}
+          <TabsContent value="accessibility">
+            <AccessibilityToggle />
           </TabsContent>
         </Tabs>
       </div>

@@ -20,6 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, UtensilsCrossed } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Menu {
   id: string;
@@ -247,7 +253,7 @@ export default function MenuPage() {
                               <h3 className="font-semibold truncate">{menu.name}</h3>
                               <Badge
                                 variant={menu.isAvailable ? "default" : "secondary"}
-                                className={`cursor-pointer ${
+                                className={`cursor-pointer min-h-[44px] px-3 flex items-center justify-center ${
                                   menu.isAvailable
                                     ? "bg-green-500 hover:bg-green-600"
                                     : "bg-gray-400"
@@ -257,7 +263,7 @@ export default function MenuPage() {
                                 {menu.isAvailable ? "Tersedia" : "Habis"}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
+                            <p className="text-base text-muted-foreground line-clamp-1">
                               {menu.description || "-"}
                             </p>
                             <p className="font-bold text-primary-600 mt-1">
@@ -265,21 +271,40 @@ export default function MenuPage() {
                             </p>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog(menu)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(menu.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-11 w-11 min-h-[44px] min-w-[44px]"
+                                    onClick={() => handleOpenDialog(menu)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Ubah menu ini</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-11 w-11 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                                    onClick={() => handleDelete(menu.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Hapus menu ini</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
                       ))}
@@ -301,7 +326,7 @@ export default function MenuPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nama Menu</label>
+              <label className="text-base font-medium">Nama Menu</label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
@@ -311,7 +336,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Deskripsi</label>
+              <label className="text-base font-medium">Deskripsi</label>
               <Input
                 value={formData.description}
                 onChange={(e) =>
@@ -321,7 +346,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Harga (Rp)</label>
+              <label className="text-base font-medium">Harga (Rp)</label>
               <Input
                 type="number"
                 value={formData.price}
@@ -332,7 +357,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Kategori</label>
+              <label className="text-base font-medium">Kategori</label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) =>

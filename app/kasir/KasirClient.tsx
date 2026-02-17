@@ -15,6 +15,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCartStore, type CartItem } from "@/store/cart";
 import {
   Plus,
@@ -26,10 +32,12 @@ import {
   ShoppingCart,
   Search,
   Printer,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
 import { toast } from "@/lib/toast";
+import { useAccessibility } from "@/lib/accessibility-context";
 
 interface Menu {
   id: string;
@@ -57,6 +65,7 @@ interface Category {
 const TAX_RATE = 10; // 10% Pajak
 
 export function KasirClient() {
+  const { simpleMode } = useAccessibility();
   const [menus, setMenus] = useState<Menu[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -154,6 +163,11 @@ export function KasirClient() {
         setDiscount(0);
         setOrderNotes("");
 
+        // Show success message
+        toast.success("Pesanan berhasil dibuat!", {
+          description: `Total: ${formatCurrency(total)}`,
+        });
+
         // Auto-print receipt
         try {
           printReceipt({
@@ -172,9 +186,6 @@ export function KasirClient() {
         } catch (printError) {
           console.error("Print failed:", printError);
           // Still show success even if print fails
-          toast.success("Pesanan berhasil dibuat!", {
-            description: "Gagal mencetak struk",
-          });
         }
       }
     } catch (error) {
@@ -183,8 +194,14 @@ export function KasirClient() {
     }
   };
 
+  const handleQuickCheckout = async () => {
+    // Quick checkout with default CASH payment method
+    await handleCheckout("CASH");
+  };
+
   return (
-    <div className="flex gap-6 h-[calc(100vh-3rem)]">
+    <TooltipProvider>
+      <div className="flex gap-6 h-[calc(100vh-3rem)]">
       {/* Menu Section */}
       <div className="flex-1 flex flex-col">
         {/* Search */}
@@ -223,19 +240,19 @@ export function KasirClient() {
             {filteredMenus.map((menu) => (
               <Card
                 key={menu.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group min-h-[44px]"
                 onClick={() => handleAddToCart(menu)}
               >
-                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center min-h-[120px]">
                   {menu.image ? (
                     <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-4xl">🍜</span>
+                    <span className="text-5xl">🍜</span>
                   )}
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold text-sm truncate">{menu.name}</h3>
-                  <p className="text-primary-600 font-bold mt-1">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-base truncate leading-tight">{menu.name}</h3>
+                  <p className="text-primary-600 font-bold text-lg mt-2">
                     {formatCurrency(menu.price)}
                   </p>
                 </CardContent>
@@ -287,34 +304,55 @@ export function KasirClient() {
                           maxLength={100}
                         />
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-12 w-12"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Kurangi jumlah</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <span className="w-10 text-center text-base font-medium">
                           {item.quantity}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-12 w-12"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Tambah jumlah</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-12 w-12 text-destructive hover:text-destructive"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Hapus item</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   ))}
@@ -322,17 +360,19 @@ export function KasirClient() {
               </ScrollArea>
 
               <div className="p-6 border-t">
-                {/* Discount Input */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm text-muted-foreground">Diskon:</span>
-                  <Input
-                    type="number"
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                    className="h-8 w-24"
-                    placeholder="0"
-                  />
-                </div>
+                {/* Discount Input - Hidden in Simple Mode */}
+                {!simpleMode && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sm text-muted-foreground">Diskon:</span>
+                    <Input
+                      type="number"
+                      value={discount || ""}
+                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                      className="h-8 w-24"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
 
                 <Separator className="my-3" />
 
@@ -359,12 +399,36 @@ export function KasirClient() {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full mt-4 h-12 text-lg bg-primary-600 hover:bg-primary-700"
-                  onClick={() => setShowCheckout(true)}
-                >
-                  Bayar Sekarang
-                </Button>
+                <div className="space-y-2 mt-4">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        className="w-full h-12 text-lg bg-primary-600 hover:bg-primary-700 shadow-lg"
+                        onClick={handleQuickCheckout}
+                      >
+                        <Zap className="mr-2 h-5 w-5" />
+                        Bayar Sekarang
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Bayar dengan tunai (cepat)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm"
+                        onClick={() => setShowCheckout(true)}
+                      >
+                        Pilih Metode Lain
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Pilih QRIS atau Debit</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </>
           )}
@@ -377,43 +441,67 @@ export function KasirClient() {
           <DialogHeader>
             <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
-              <Textarea
-                placeholder="Tambahkan catatan untuk pesanan ini..."
-                value={orderNotes}
-                onChange={(e) => setOrderNotes(e.target.value)}
-                maxLength={200}
-                rows={3}
-              />
+          {/* Order Notes - Hidden in Simple Mode */}
+          {!simpleMode && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
+                <Textarea
+                  placeholder="Tambahkan catatan untuk pesanan ini..."
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  maxLength={200}
+                  rows={3}
+                />
+              </div>
             </div>
-          </div>
+          )}
           <div className="grid grid-cols-3 gap-3 py-4">
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("CASH")}
-            >
-              <Banknote className="h-8 w-8" />
-              <span>Tunai</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("QRIS")}
-            >
-              <QrCode className="h-8 w-8" />
-              <span>QRIS</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("DEBIT")}
-            >
-              <CreditCard className="h-8 w-8" />
-              <span>Debit</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("CASH")}
+                >
+                  <Banknote className="h-8 w-8" />
+                  <span>Tunai</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bayar dengan uang tunai</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("QRIS")}
+                >
+                  <QrCode className="h-8 w-8" />
+                  <span>QRIS</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Scan QR untuk pembayaran</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("DEBIT")}
+                >
+                  <CreditCard className="h-8 w-8" />
+                  <span>Debit</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bayar dengan kartu debit</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-primary-600">{formatCurrency(total)}</p>
@@ -426,5 +514,6 @@ export function KasirClient() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
