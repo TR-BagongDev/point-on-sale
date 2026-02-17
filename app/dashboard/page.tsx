@@ -24,6 +24,7 @@ import type {
   ItemSalesData,
   PeriodComparisonData,
 } from "@/lib/analytics";
+import { toast } from "@/lib/toast";
 
 interface PaymentMethodData {
   method: string;
@@ -126,7 +127,9 @@ export default function DashboardPage() {
       // Fetch analytics data
       await fetchAnalyticsData();
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Gagal memuat data dashboard", {
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data',
+      });
       setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data');
     } finally {
       setLoading(false);
@@ -175,7 +178,9 @@ export default function DashboardPage() {
       setBottomItems(analytics.bottomItems || []);
       setPeriodComparison(analytics.periodComparison || null);
     } catch (error) {
-      console.error("Failed to fetch analytics data:", error);
+      toast.error("Gagal memuat data analitik", {
+        description: error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data analitik',
+      });
       setError(error instanceof Error ? error.message : 'Gagal memuat data analitik');
       // Set empty arrays on error to prevent rendering issues
       setSalesTrend([]);

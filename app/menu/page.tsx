@@ -20,12 +20,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, UtensilsCrossed } from "lucide-react";
+<<<<<<< HEAD
+import { Loading } from "@/components/ui/loading";
+import { toast } from "@/lib/toast";
+=======
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+>>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
 
 interface Menu {
   id: string;
@@ -63,6 +68,9 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isToggling, setIsToggling] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -79,10 +87,13 @@ export default function MenuPage() {
   const fetchMenus = async () => {
     try {
       const res = await fetch("/api/menu");
+      if (!res.ok) throw new Error("Failed to fetch menus");
       const data = await res.json();
       setMenus(data);
     } catch (error) {
-      console.error("Failed to fetch menus:", error);
+      toast.error("Gagal memuat menu", {
+        description: "Terjadi kesalahan saat mengambil data menu",
+      });
     } finally {
       setLoading(false);
     }
@@ -91,10 +102,13 @@ export default function MenuPage() {
   const fetchCategories = async () => {
     try {
       const res = await fetch("/api/category");
+      if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
+      toast.error("Gagal memuat kategori", {
+        description: "Terjadi kesalahan saat mengambil data kategori",
+      });
     }
   };
 
@@ -134,6 +148,29 @@ export default function MenuPage() {
   };
 
   const handleSubmit = async () => {
+    // Form validation
+    if (!formData.name.trim()) {
+      toast.error("Nama menu wajib diisi", {
+        description: "Silakan masukkan nama menu",
+      });
+      return;
+    }
+
+    if (!formData.price || Number(formData.price) <= 0) {
+      toast.error("Harga tidak valid", {
+        description: "Silakan masukkan harga yang valid",
+      });
+      return;
+    }
+
+    if (!formData.categoryId) {
+      toast.error("Kategori wajib dipilih", {
+        description: "Silakan pilih kategori untuk menu ini",
+      });
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const url = "/api/menu";
       const method = editingMenu ? "PUT" : "POST";
@@ -147,32 +184,61 @@ export default function MenuPage() {
         body: JSON.stringify(body),
       });
 
-      if (res.ok) {
-        fetchMenus();
-        handleCloseDialog();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save menu");
       }
+
+      await fetchMenus();
+      handleCloseDialog();
+
+      toast.success(editingMenu ? "Menu berhasil diperbarui" : "Menu berhasil ditambahkan", {
+        description: editingMenu
+          ? `Menu "${formData.name}" telah diperbarui`
+          : `Menu "${formData.name}" telah ditambahkan`,
+      });
     } catch (error) {
-      console.error("Failed to save menu:", error);
+      toast.error("Gagal menyimpan menu", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan menu",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus menu ini?")) return;
+    const menuToDelete = menus.find((m) => m.id === id);
+    if (!menuToDelete) return;
 
+    if (!confirm(`Apakah Anda yakin ingin menghapus menu "${menuToDelete.name}"?`)) return;
+
+    setIsDeleting(id);
     try {
       const res = await fetch(`/api/menu?id=${id}`, {
         method: "DELETE",
       });
 
-      if (res.ok) {
-        fetchMenus();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete menu");
       }
+
+      await fetchMenus();
+
+      toast.success("Menu berhasil dihapus", {
+        description: `Menu "${menuToDelete.name}" telah dihapus`,
+      });
     } catch (error) {
-      console.error("Failed to delete menu:", error);
+      toast.error("Gagal menghapus menu", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat menghapus menu",
+      });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
   const toggleAvailability = async (menu: Menu) => {
+    setIsToggling(menu.id);
     try {
       const res = await fetch("/api/menu", {
         method: "PUT",
@@ -187,11 +253,26 @@ export default function MenuPage() {
         }),
       });
 
-      if (res.ok) {
-        fetchMenus();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to toggle availability");
       }
+
+      await fetchMenus();
+
+      const newStatus = !menu.isAvailable;
+      toast.success(
+        newStatus ? "Menu ditandai tersedia" : "Menu ditandai habis",
+        {
+          description: `Menu "${menu.name}" sekarang ${newStatus ? "tersedia" : "habis"}`,
+        }
+      );
     } catch (error) {
-      console.error("Failed to toggle availability:", error);
+      toast.error("Gagal mengubah status ketersediaan", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengubah status",
+      });
+    } finally {
+      setIsToggling(null);
     }
   };
 
@@ -219,8 +300,11 @@ export default function MenuPage() {
 
         {/* Menu List by Category */}
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Memuat data...
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <Loading size="lg" className="mx-auto mb-4 text-primary-600" />
+              <p className="text-muted-foreground">Memuat data...</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
@@ -260,7 +344,13 @@ export default function MenuPage() {
                                 }`}
                                 onClick={() => toggleAvailability(menu)}
                               >
-                                {menu.isAvailable ? "Tersedia" : "Habis"}
+                                {isToggling === menu.id ? (
+                                  <Loading size="sm" className="text-current" />
+                                ) : menu.isAvailable ? (
+                                  "Tersedia"
+                                ) : (
+                                  "Habis"
+                                )}
                               </Badge>
                             </div>
                             <p className="text-base text-muted-foreground line-clamp-1">
@@ -271,6 +361,29 @@ export default function MenuPage() {
                             </p>
                           </div>
                           <div className="flex gap-1">
+<<<<<<< HEAD
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(menu)}
+                              disabled={isDeleting === menu.id || isToggling === menu.id}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(menu.id)}
+                              disabled={isDeleting === menu.id || isToggling === menu.id}
+                            >
+                              {isDeleting === menu.id ? (
+                                <Loading size="sm" className="text-current" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+=======
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -305,6 +418,7 @@ export default function MenuPage() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+>>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
                           </div>
                         </div>
                       ))}
@@ -378,14 +492,24 @@ export default function MenuPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
+            <Button variant="outline" onClick={handleCloseDialog} disabled={isSaving}>
               Batal
             </Button>
             <Button
               onClick={handleSubmit}
+              disabled={isSaving}
               className="bg-primary-600 hover:bg-primary-700"
             >
-              {editingMenu ? "Simpan" : "Tambah"}
+              {isSaving ? (
+                <>
+                  <Loading size="sm" className="mr-2" />
+                  {editingMenu ? "Menyimpan..." : "Menambahkan..."}
+                </>
+              ) : editingMenu ? (
+                "Simpan"
+              ) : (
+                "Tambah"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

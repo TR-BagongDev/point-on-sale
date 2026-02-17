@@ -18,6 +18,7 @@ import {
   Save,
   Check,
 } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 interface StoreSettings {
   storeName: string;
@@ -91,7 +92,9 @@ export default function PengaturanPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch settings:", error);
+      toast.error("Gagal memuat pengaturan", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengambil data pengaturan",
+      });
     } finally {
       setLoading(false);
     }
@@ -106,12 +109,21 @@ export default function PengaturanPage() {
         body: JSON.stringify(storeSettings),
       });
 
-      if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal menyimpan pengaturan toko");
       }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+
+      toast.success("Pengaturan toko berhasil disimpan", {
+        description: "Perubahan telah diterapkan",
+      });
     } catch (error) {
-      console.error("Failed to save settings:", error);
+      toast.error("Gagal menyimpan pengaturan toko", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan pengaturan",
+      });
     } finally {
       setSaving(false);
     }
@@ -126,12 +138,21 @@ export default function PengaturanPage() {
         body: JSON.stringify(receiptSettings),
       });
 
-      if (res.ok) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal menyimpan template struk");
       }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+
+      toast.success("Template struk berhasil disimpan", {
+        description: "Perubahan telah diterapkan",
+      });
     } catch (error) {
-      console.error("Failed to save receipt settings:", error);
+      toast.error("Gagal menyimpan template struk", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan template",
+      });
     } finally {
       setSaving(false);
     }

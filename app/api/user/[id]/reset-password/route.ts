@@ -25,15 +25,16 @@ export async function POST(
     const { newPassword } = body;
 
     // Validate required fields
-    if (!newPassword) {
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim() === '') {
       return NextResponse.json(
-        { error: "New password is required" },
+        { error: "New password is required and cannot be empty" },
         { status: 400 }
       );
     }
 
-    // Validate password length
-    if (newPassword.length < 6) {
+    // Validate password length (after trimming)
+    const trimmedPassword = newPassword.trim();
+    if (trimmedPassword.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long" },
         { status: 400 }
@@ -53,7 +54,7 @@ export async function POST(
     }
 
     // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
 
     // Update user password
     const updatedUser = await prisma.user.update({

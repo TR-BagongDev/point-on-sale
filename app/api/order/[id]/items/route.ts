@@ -57,13 +57,46 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+
+    // Validate id parameter
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { error: "Valid order ID is required" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { menuId, quantity, notes } = body;
 
-    // Validate input
-    if (!menuId || !quantity || quantity <= 0) {
+    // Validate menuId
+    if (!menuId || typeof menuId !== "string") {
       return NextResponse.json(
-        { error: "Invalid menu ID or quantity" },
+        { error: "Valid menu ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate quantity
+    if (quantity === undefined || quantity === null) {
+      return NextResponse.json(
+        { error: "Quantity is required" },
+        { status: 400 }
+      );
+    }
+
+    const parsedQuantity = typeof quantity === "string" ? parseInt(quantity, 10) : quantity;
+    if (typeof parsedQuantity !== "number" || isNaN(parsedQuantity) || parsedQuantity <= 0) {
+      return NextResponse.json(
+        { error: "Quantity must be a valid positive number" },
+        { status: 400 }
+      );
+    }
+
+    // Validate notes if provided
+    if (notes !== undefined && notes !== null && typeof notes !== "string") {
+      return NextResponse.json(
+        { error: "Notes must be a string" },
         { status: 400 }
       );
     }
@@ -109,16 +142,16 @@ export async function POST(
 
     // Check if item already exists in order
     const existingItem = order.items.find(
-      (item: any) => item.menuId === menuId && item.notes === notes
+      (item) => item.menuId === menuId && item.notes === notes
     );
 
-    let updatedItem: any;
+    let updatedItem;
 
     if (existingItem) {
       // Update quantity of existing item
       updatedItem = await prisma.orderItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
+        data: { quantity: existingItem.quantity + parsedQuantity },
         include: { menu: true },
       });
 
@@ -127,11 +160,11 @@ export async function POST(
         id,
         order.userId,
         "QUANTITY_CHANGED",
-        `Updated quantity for ${menu.name} from ${existingItem.quantity} to ${existingItem.quantity + quantity}`,
+        `Updated quantity for ${menu.name} from ${existingItem.quantity} to ${existingItem.quantity + parsedQuantity}`,
         {
           fieldName: "quantity",
           oldValue: existingItem.quantity,
-          newValue: existingItem.quantity + quantity,
+          newValue: existingItem.quantity + parsedQuantity,
           itemId: existingItem.id,
           menuName: menu.name,
         }
@@ -142,7 +175,7 @@ export async function POST(
         data: {
           orderId: id,
           menuId,
-          quantity,
+          quantity: parsedQuantity,
           price: menu.price,
           notes,
         },
@@ -154,11 +187,11 @@ export async function POST(
         id,
         order.userId,
         "ITEM_ADDED",
-        `Added ${quantity}x ${menu.name} to order`,
+        `Added ${parsedQuantity}x ${menu.name} to order`,
         {
           itemId: updatedItem.id,
           menuName: menu.name,
-          quantity,
+          quantity: parsedQuantity,
           price: menu.price,
         }
       );
@@ -185,13 +218,49 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+
+    // Validate id parameter
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { error: "Valid order ID is required" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { itemId, quantity, notes } = body;
 
-    // Validate input
-    if (!itemId) {
+    // Validate itemId
+    if (!itemId || typeof itemId !== "string") {
       return NextResponse.json(
-        { error: "Item ID is required" },
+        { error: "Valid item ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate that at least one field is provided
+    if (quantity === undefined && notes === undefined) {
+      return NextResponse.json(
+        { error: "At least one field (quantity or notes) must be provided" },
+        { status: 400 }
+      );
+    }
+
+    // Validate quantity if provided
+    if (quantity !== undefined && quantity !== null) {
+      const parsedQuantity = typeof quantity === "string" ? parseInt(quantity, 10) : quantity;
+      if (typeof parsedQuantity !== "number" || isNaN(parsedQuantity) || parsedQuantity <= 0) {
+        return NextResponse.json(
+          { error: "Quantity must be a valid positive number" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate notes if provided
+    if (notes !== undefined && notes !== null && typeof notes !== "string") {
+      return NextResponse.json(
+        { error: "Notes must be a string" },
         { status: 400 }
       );
     }
@@ -217,7 +286,7 @@ export async function PATCH(
     }
 
     // Find the item
-    const item = order.items.find((i: any) => i.id === itemId);
+    const item = order.items.find((i) => i.id === itemId);
 
     if (!item) {
       return NextResponse.json(
@@ -229,32 +298,33 @@ export async function PATCH(
     // Build update data
     const updateData: Record<string, unknown> = {};
 
-    if (quantity !== undefined) {
-      if (quantity <= 0) {
+    if (quantity !== undefined && quantity !== null) {
+      const parsedQuantity = typeof quantity === "string" ? parseInt(quantity, 10) : quantity;
+      if (parsedQuantity <= 0) {
         return NextResponse.json(
           { error: "Quantity must be greater than 0" },
           { status: 400 }
         );
       }
-      updateData.quantity = quantity;
+      updateData.quantity = parsedQuantity;
 
       // Track quantity change
       await trackModification(
         id,
         order.userId,
         "QUANTITY_CHANGED",
-        `Updated quantity for ${item.menu.name} from ${item.quantity} to ${quantity}`,
+        `Updated quantity for ${item.menu.name} from ${item.quantity} to ${parsedQuantity}`,
         {
           fieldName: "quantity",
           oldValue: item.quantity,
-          newValue: quantity,
+          newValue: parsedQuantity,
           itemId: item.id,
           menuName: item.menu.name,
         }
       );
     }
 
-    if (notes !== undefined) {
+    if (notes !== undefined && notes !== null) {
       updateData.notes = notes;
 
       // Track notes change
@@ -281,7 +351,7 @@ export async function PATCH(
     });
 
     // Recalculate order totals if quantity changed
-    if (quantity !== undefined) {
+    if (quantity !== undefined && quantity !== null) {
       await recalculateOrderTotals(id);
     }
 
@@ -302,12 +372,21 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Validate id parameter
+    if (!id || typeof id !== "string") {
+      return NextResponse.json(
+        { error: "Valid order ID is required" },
+        { status: 400 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get("itemId");
 
-    if (!itemId) {
+    if (!itemId || typeof itemId !== "string") {
       return NextResponse.json(
-        { error: "Item ID is required" },
+        { error: "Valid item ID is required" },
         { status: 400 }
       );
     }
@@ -333,7 +412,7 @@ export async function DELETE(
     }
 
     // Find the item
-    const item = order.items.find((i: any) => i.id === itemId);
+    const item = order.items.find((i) => i.id === itemId);
 
     if (!item) {
       return NextResponse.json(
