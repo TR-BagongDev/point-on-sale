@@ -291,7 +291,7 @@ export function KasirClient() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-11 w-11"
+                          className="h-12 w-12"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         >
                           <Minus className="h-4 w-4" />
@@ -302,7 +302,7 @@ export function KasirClient() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-11 w-11"
+                          className="h-12 w-12"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         >
                           <Plus className="h-4 w-4" />
@@ -310,7 +310,7 @@ export function KasirClient() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-11 w-11 text-destructive hover:text-destructive"
+                          className="h-12 w-12 text-destructive hover:text-destructive"
                           onClick={() => removeItem(item.id)}
                         >
                           <Trash2 className="h-4 w-4" />
