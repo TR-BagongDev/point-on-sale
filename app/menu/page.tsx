@@ -257,7 +257,7 @@ export default function MenuPage() {
                                 {menu.isAvailable ? "Tersedia" : "Habis"}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
+                            <p className="text-base text-muted-foreground line-clamp-1">
                               {menu.description || "-"}
                             </p>
                             <p className="font-bold text-primary-600 mt-1">
@@ -302,7 +302,7 @@ export default function MenuPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nama Menu</label>
+              <label className="text-base font-medium">Nama Menu</label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
@@ -312,7 +312,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Deskripsi</label>
+              <label className="text-base font-medium">Deskripsi</label>
               <Input
                 value={formData.description}
                 onChange={(e) =>
@@ -322,7 +322,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Harga (Rp)</label>
+              <label className="text-base font-medium">Harga (Rp)</label>
               <Input
                 type="number"
                 value={formData.price}
@@ -333,7 +333,7 @@ export default function MenuPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Kategori</label>
+              <label className="text-base font-medium">Kategori</label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) =>
