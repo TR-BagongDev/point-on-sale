@@ -38,6 +38,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { Loading } from "@/components/ui/loading";
 import { toast } from "@/lib/toast";
 import { OrderModificationDialog } from "@/components/order/OrderModificationDialog";
 
@@ -139,12 +140,14 @@ export default function PesananPage() {
       }
 
       const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
 
       setOrders(data);
     } catch (error) {
-      console.error("Failed to fetch orders:", error);
-      toast.error("Gagal memuat pesanan");
+      toast.error("Gagal memuat pesanan", {
+        description: "Terjadi kesalahan saat mengambil data pesanan",
+      });
     } finally {
       setLoading(false);
     }
@@ -205,13 +208,13 @@ export default function PesananPage() {
 
     try {
       const res = await fetch(`/api/order/${order.id}/history`);
-      if (res.ok) {
-        const data = await res.json();
-        setModifications(data);
-      }
+      if (!res.ok) throw new Error("Failed to fetch modification history");
+      const data = await res.json();
+      setModifications(data);
     } catch (error) {
-      console.error("Failed to fetch modification history:", error);
-      toast.error("Gagal memuat riwayat modifikasi");
+      toast.error("Gagal memuat riwayat modifikasi", {
+        description: "Terjadi kesalahan saat mengambil data riwayat",
+      });
     } finally {
       setLoadingHistory(false);
     }
@@ -316,8 +319,11 @@ export default function PesananPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Memuat data...
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <Loading size="lg" className="mx-auto mb-4 text-primary-600" />
+                  <p className="text-muted-foreground">Memuat data...</p>
+                </div>
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -577,8 +583,11 @@ export default function PesananPage() {
                   </CardHeader>
                   <CardContent>
                     {loadingHistory ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        Memuat riwayat modifikasi...
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <Loading size="sm" className="mx-auto mb-2 text-primary-600" />
+                          <p className="text-sm text-muted-foreground">Memuat riwayat modifikasi...</p>
+                        </div>
                       </div>
                     ) : modifications.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
