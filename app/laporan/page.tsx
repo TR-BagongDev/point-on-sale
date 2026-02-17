@@ -112,6 +112,10 @@ export default function LaporanPage() {
       }
 
       const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error("Gagal memuat data pesanan");
+      }
+
       let data = await res.json();
 
       // Filter by payment method
@@ -121,7 +125,9 @@ export default function LaporanPage() {
 
       setOrders(data);
     } catch (error) {
-      console.error("Failed to fetch orders:", error);
+      toast.error("Gagal memuat laporan", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengambil data pesanan",
+      });
     } finally {
       setLoading(false);
     }
@@ -160,8 +166,9 @@ export default function LaporanPage() {
         },
       });
     } catch (error) {
-      console.error("Gagal mencetak struk:", error);
-      toast.error("Gagal mencetak struk");
+      toast.error("Gagal mencetak struk", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mencetak struk",
+      });
     }
   };
 
