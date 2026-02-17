@@ -15,6 +15,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCartStore, type CartItem } from "@/store/cart";
 import {
   Plus,
@@ -192,7 +198,8 @@ export function KasirClient() {
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-3rem)]">
+    <TooltipProvider>
+      <div className="flex gap-6 h-[calc(100vh-3rem)]">
       {/* Menu Section */}
       <div className="flex-1 flex flex-col">
         {/* Search */}
@@ -296,33 +303,54 @@ export function KasirClient() {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-12 w-12"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-12 w-12"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Kurangi jumlah</p>
+                          </TooltipContent>
+                        </Tooltip>
                         <span className="w-10 text-center text-base font-medium">
                           {item.quantity}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-12 w-12"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-12 w-12 text-destructive hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-12 w-12"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Tambah jumlah</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-12 w-12 text-destructive hover:text-destructive"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Hapus item</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   ))}
@@ -368,20 +396,34 @@ export function KasirClient() {
                 </div>
 
                 <div className="space-y-2 mt-4">
-                  <Button
-                    className="w-full h-12 text-lg bg-primary-600 hover:bg-primary-700 shadow-lg"
-                    onClick={handleQuickCheckout}
-                  >
-                    <Zap className="mr-2 h-5 w-5" />
-                    Bayar Sekarang
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm"
-                    onClick={() => setShowCheckout(true)}
-                  >
-                    Pilih Metode Lain
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        className="w-full h-12 text-lg bg-primary-600 hover:bg-primary-700 shadow-lg"
+                        onClick={handleQuickCheckout}
+                      >
+                        <Zap className="mr-2 h-5 w-5" />
+                        Bayar Sekarang
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Bayar dengan tunai (cepat)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full h-10 text-sm"
+                        onClick={() => setShowCheckout(true)}
+                      >
+                        Pilih Metode Lain
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Pilih QRIS atau Debit</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </>
@@ -408,30 +450,51 @@ export function KasirClient() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 py-4">
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("CASH")}
-            >
-              <Banknote className="h-8 w-8" />
-              <span>Tunai</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("QRIS")}
-            >
-              <QrCode className="h-8 w-8" />
-              <span>QRIS</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("DEBIT")}
-            >
-              <CreditCard className="h-8 w-8" />
-              <span>Debit</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("CASH")}
+                >
+                  <Banknote className="h-8 w-8" />
+                  <span>Tunai</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bayar dengan uang tunai</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("QRIS")}
+                >
+                  <QrCode className="h-8 w-8" />
+                  <span>QRIS</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Scan QR untuk pembayaran</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-24 flex-col gap-2"
+                  onClick={() => handleCheckout("DEBIT")}
+                >
+                  <CreditCard className="h-8 w-8" />
+                  <span>Debit</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bayar dengan kartu debit</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-primary-600">{formatCurrency(total)}</p>
@@ -444,5 +507,6 @@ export function KasirClient() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
