@@ -42,6 +42,41 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { storeName, address, phone, taxRate } = body;
 
+    // Validate store name if provided
+    if (storeName !== undefined && (typeof storeName !== "string" || storeName.trim() === "")) {
+      return NextResponse.json(
+        { error: "Store name must be a non-empty string" },
+        { status: 400 }
+      );
+    }
+
+    // Validate address if provided
+    if (address !== undefined && address !== null && typeof address !== "string") {
+      return NextResponse.json(
+        { error: "Address must be a string" },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone if provided
+    if (phone !== undefined && phone !== null && typeof phone !== "string") {
+      return NextResponse.json(
+        { error: "Phone must be a string" },
+        { status: 400 }
+      );
+    }
+
+    // Validate tax rate if provided
+    if (taxRate !== undefined && taxRate !== null && taxRate !== "") {
+      const parsedTaxRate = parseFloat(taxRate);
+      if (isNaN(parsedTaxRate) || parsedTaxRate < 0 || parsedTaxRate > 100) {
+        return NextResponse.json(
+          { error: "Tax rate must be a valid number between 0 and 100" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Find existing settings or create default
     let settings = await prisma.setting.findFirst();
 
@@ -49,19 +84,19 @@ export async function PUT(request: NextRequest) {
       settings = await prisma.setting.update({
         where: { id: settings.id },
         data: {
-          storeName,
-          address,
-          phone,
-          taxRate: parseFloat(taxRate) || 0,
+          ...(storeName !== undefined && { storeName: storeName.trim() }),
+          ...(address !== undefined && { address: address?.trim() || null }),
+          ...(phone !== undefined && { phone: phone?.trim() || null }),
+          ...(taxRate !== undefined && taxRate !== null && taxRate !== "" && { taxRate: parseFloat(taxRate) }),
         },
       });
     } else {
       settings = await prisma.setting.create({
         data: {
-          storeName,
-          address,
-          phone,
-          taxRate: parseFloat(taxRate) || 0,
+          storeName: storeName?.trim() || "",
+          address: address?.trim() || null,
+          phone: phone?.trim() || null,
+          taxRate: (taxRate !== undefined && taxRate !== null && taxRate !== "") ? parseFloat(taxRate) : 0,
         },
       });
     }
