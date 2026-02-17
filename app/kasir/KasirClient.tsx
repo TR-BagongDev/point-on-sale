@@ -64,29 +64,39 @@ export function KasirClient() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [orderNotes, setOrderNotes] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
 
   async function fetchMenus() {
     try {
       const res = await fetch("/api/menu");
+      if (!res.ok) throw new Error("Failed to fetch menus");
       const data = await res.json();
       setMenus(data);
     } catch (error) {
-      console.error("Failed to fetch menus:", error);
+      toast.error("Gagal memuat menu", {
+        description: "Terjadi kesalahan saat mengambil data menu",
+      });
+    } finally {
+      setLoading(false);
     }
   }
 
   async function fetchCategories() {
     try {
       const res = await fetch("/api/category");
+      if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
       setCategories(data);
       if (data.length > 0) {
         setSelectedCategory(data[0].id);
       }
     } catch (error) {
-      console.error("Failed to fetch categories:", error);
+      toast.error("Gagal memuat kategori", {
+        description: "Terjadi kesalahan saat mengambil data kategori",
+      });
     }
   }
 
@@ -123,6 +133,7 @@ export function KasirClient() {
   };
 
   const handleCheckout = async (paymentMethod: string) => {
+    setIsCheckingOut(true);
     try {
       const order = {
         items: items.map((item) => ({
@@ -145,46 +156,63 @@ export function KasirClient() {
         body: JSON.stringify(order),
       });
 
-      if (res.ok) {
-        const createdOrder: Order = await res.json();
+      if (!res.ok) {
+        throw new Error("Failed to create order");
+      }
 
-        // Clear cart and close dialog
-        clearCart();
-        setShowCheckout(false);
-        setDiscount(0);
-        setOrderNotes("");
+      const createdOrder: Order = await res.json();
 
-        // Auto-print receipt
-        try {
-          printReceipt({
-            order: createdOrder,
-            template: {
-              paperWidth: 80, // Default to 80mm thermal printer
-            },
-            settings: {
-              storeName: "Warung Nasi Goreng",
-              address: "",
-              phone: "",
-              taxRate: TAX_RATE,
-              currency: "IDR",
-            },
-          });
-        } catch (printError) {
-          console.error("Print failed:", printError);
-          // Still show success even if print fails
-          toast.success("Pesanan berhasil dibuat!", {
-            description: "Gagal mencetak struk",
-          });
-        }
+      // Clear cart and close dialog
+      clearCart();
+      setShowCheckout(false);
+      setDiscount(0);
+      setOrderNotes("");
+
+      toast.success("Pesanan berhasil dibuat!", {
+        description: `Total: ${formatCurrency(total)}`,
+      });
+
+      // Auto-print receipt
+      try {
+        printReceipt({
+          order: createdOrder,
+          template: {
+            paperWidth: 80, // Default to 80mm thermal printer
+          },
+          settings: {
+            storeName: "Warung Nasi Goreng",
+            address: "",
+            phone: "",
+            taxRate: TAX_RATE,
+            currency: "IDR",
+          },
+        });
+      } catch (printError) {
+        // Still show success even if print fails
+        toast.warning("Gagal mencetak struk", {
+          description: "Pesanan tetap berhasil dibuat",
+        });
       }
     } catch (error) {
-      console.error("Checkout failed:", error);
-      toast.error("Gagal memproses pesanan");
+      toast.error("Gagal memproses pesanan", {
+        description: "Terjadi kesalahan saat membuat pesanan",
+      });
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
   return (
     <div className="flex gap-6 h-[calc(100vh-3rem)]">
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Memuat data...</p>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Menu Section */}
       <div className="flex-1 flex flex-col">
         {/* Search */}
@@ -394,25 +422,55 @@ export function KasirClient() {
               variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => handleCheckout("CASH")}
+              disabled={isCheckingOut}
             >
-              <Banknote className="h-8 w-8" />
-              <span>Tunai</span>
+              {isCheckingOut ? (
+                <>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <Banknote className="h-8 w-8" />
+                  <span>Tunai</span>
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => handleCheckout("QRIS")}
+              disabled={isCheckingOut}
             >
-              <QrCode className="h-8 w-8" />
-              <span>QRIS</span>
+              {isCheckingOut ? (
+                <>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <QrCode className="h-8 w-8" />
+                  <span>QRIS</span>
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-24 flex-col gap-2"
               onClick={() => handleCheckout("DEBIT")}
+              disabled={isCheckingOut}
             >
-              <CreditCard className="h-8 w-8" />
-              <span>Debit</span>
+              {isCheckingOut ? (
+                <>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-8 w-8" />
+                  <span>Debit</span>
+                </>
+              )}
             </Button>
           </div>
           <div className="text-center">
@@ -425,6 +483,8 @@ export function KasirClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+      )}
     </div>
   );
 }
