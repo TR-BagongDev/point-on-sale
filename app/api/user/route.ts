@@ -57,16 +57,50 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, password, role } = body;
 
-    // Validate required fields
-    if (!name || !email || !password || !role) {
+    // Validate name
+    if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
-        { error: "Missing required fields: name, email, password, role" },
+        { error: "Name is required and cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate email
+    if (!email || typeof email !== 'string' || email.trim() === '') {
+      return NextResponse.json(
+        { error: "Email is required and cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate password
+    if (!password || typeof password !== 'string' || password.trim() === '') {
+      return NextResponse.json(
+        { error: "Password is required and cannot be empty" },
+        { status: 400 }
+      );
+    }
+
+    // Validate role
+    if (!role || typeof role !== 'string' || role.trim() === '') {
+      return NextResponse.json(
+        { error: "Role is required and cannot be empty" },
         { status: 400 }
       );
     }
 
     // Validate role values
-    if (!["ADMIN", "KASIR"].includes(role)) {
+    const trimmedRole = role.trim();
+    if (!["ADMIN", "KASIR"].includes(trimmedRole)) {
       return NextResponse.json(
         { error: "Role must be either ADMIN or KASIR" },
         { status: 400 }
@@ -75,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.trim() },
     });
 
     if (existingUser) {
@@ -86,15 +120,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password: hashedPassword,
-        role,
+        role: trimmedRole,
         isActive: true,
       },
       select: {
@@ -136,12 +170,45 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate role values if provided
-    if (role && !["ADMIN", "KASIR"].includes(role)) {
+    // Validate name if provided
+    if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
       return NextResponse.json(
-        { error: "Role must be either ADMIN or KASIR" },
+        { error: "Name cannot be empty" },
         { status: 400 }
       );
+    }
+
+    // Validate email format if provided
+    if (email !== undefined) {
+      if (typeof email !== 'string' || email.trim() === '') {
+        return NextResponse.json(
+          { error: "Email cannot be empty" },
+          { status: 400 }
+        );
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return NextResponse.json(
+          { error: "Invalid email format" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate role values if provided
+    if (role !== undefined) {
+      if (typeof role !== 'string' || role.trim() === '') {
+        return NextResponse.json(
+          { error: "Role cannot be empty" },
+          { status: 400 }
+        );
+      }
+      if (!["ADMIN", "KASIR"].includes(role.trim())) {
+        return NextResponse.json(
+          { error: "Role must be either ADMIN or KASIR" },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if user exists
@@ -157,9 +224,9 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if email already exists for another user
-    if (email && email !== existingUser.email) {
+    if (email !== undefined && email.trim() !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({
-        where: { email },
+        where: { email: email.trim() },
       });
 
       if (emailExists) {
@@ -174,9 +241,9 @@ export async function PUT(request: NextRequest) {
     const user = await prisma.user.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(role && { role }),
+        ...(name !== undefined && { name: name.trim() }),
+        ...(email !== undefined && { email: email.trim() }),
+        ...(role !== undefined && { role: role.trim() }),
         ...(isActive !== undefined && { isActive }),
       },
       select: {
