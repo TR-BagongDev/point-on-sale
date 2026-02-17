@@ -93,10 +93,8 @@ export const createMenuSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name is too long"),
   description: z.string().max(500, "Description is too long").optional(),
   price: z.coerce
-    .number({
-      required_error: "Price is required",
-      invalid_type_error: "Price must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Price must be a number" })
     .positive("Price must be positive"),
   image: z.string().url("Invalid image URL").optional(),
   categoryId: idSchema,
@@ -108,9 +106,8 @@ export const updateMenuSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
   description: z.string().max(500, "Description is too long").optional(),
   price: z.coerce
-    .number({
-      invalid_type_error: "Price must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Price must be a number" })
     .positive("Price must be positive")
     .optional(),
   image: z.string().url("Invalid image URL").optional(),
@@ -129,17 +126,13 @@ export const deleteMenuSchema = z.object({
 export const orderItemSchema = z.object({
   menuId: idSchema,
   quantity: z.coerce
-    .number({
-      required_error: "Quantity is required",
-      invalid_type_error: "Quantity must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Quantity must be a number" })
     .int("Quantity must be an integer")
     .positive("Quantity must be positive"),
   price: z.coerce
-    .number({
-      required_error: "Price is required",
-      invalid_type_error: "Price must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Price must be a number" })
     .nonnegative("Price cannot be negative"),
   notes: z.string().max(200, "Notes are too long").optional(),
 });
@@ -154,30 +147,24 @@ export const createOrderSchema = z.object({
     .min(1, "At least one item is required")
     .refine((items) => items.length > 0, "Items array cannot be empty"),
   subtotal: z.coerce
-    .number({
-      required_error: "Subtotal is required",
-      invalid_type_error: "Subtotal must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Subtotal must be a number" })
     .nonnegative("Subtotal cannot be negative"),
   tax: z.coerce
-    .number({
-      invalid_type_error: "Tax must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Tax must be a number" })
     .nonnegative("Tax cannot be negative")
     .optional()
     .default(0),
   discount: z.coerce
-    .number({
-      invalid_type_error: "Discount must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Discount must be a number" })
     .nonnegative("Discount cannot be negative")
     .optional()
     .default(0),
   total: z.coerce
-    .number({
-      required_error: "Total is required",
-      invalid_type_error: "Total must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Total must be a number" })
     .nonnegative("Total cannot be negative"),
   paymentMethod: PaymentMethodEnum.optional().default("CASH"),
   notes: z.string().max(500, "Notes are too long").optional(),
@@ -213,10 +200,8 @@ export const updateSettingsSchema = z.object({
   address: z.string().max(200, "Address is too long").optional(),
   phone: z.string().max(20, "Phone number is too long").optional(),
   taxRate: z.coerce
-    .number({
-      required_error: "Tax rate is required",
-      invalid_type_error: "Tax rate must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Tax rate must be a number" })
     .nonnegative("Tax rate cannot be negative")
     .max(100, "Tax rate cannot exceed 100%"),
 });
@@ -233,9 +218,8 @@ export const updateReceiptTemplateSchema = z.object({
   showCashier: z.boolean().optional(),
   showTax: z.boolean().optional(),
   paperWidth: z.coerce
-    .number({
-      invalid_type_error: "Paper width must be a number",
-    })
+    .number()
+    .refine((val) => !isNaN(val), { message: "Paper width must be a number" })
     .int("Paper width must be an integer")
     .positive("Paper width must be positive")
     .max(100, "Paper width cannot exceed 100mm")
