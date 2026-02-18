@@ -33,3 +33,16 @@ export function formatDate(dateStr: string | null | undefined): string {
     minute: "2-digit",
   });
 }
+
+/**
+ * Format time using Indonesian locale (HH:MM format)
+ * @example formatTime("2026-01-01T14:30:00") // "14:30"
+ * @example formatTime(null) // "-"
+ */
+export function formatTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(dateStr));
+}
