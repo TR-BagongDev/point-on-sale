@@ -17,3 +17,19 @@ export function formatCurrency(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Format date using Indonesian locale with date and time
+ * @example formatDate("2026-01-01T14:30:00") // "01 Jan 2026, 14:30"
+ * @example formatDate(null) // "-"
+ */
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
