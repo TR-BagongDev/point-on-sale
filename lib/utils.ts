@@ -46,3 +46,17 @@ export function formatTime(dateStr: string | null | undefined): string {
     minute: "2-digit",
   }).format(new Date(dateStr));
 }
+
+/**
+ * Format date using Indonesian locale (date only, no time)
+ * @example formatDateID("2026-01-01T14:30:00") // "1 Jan 2026"
+ * @example formatDateID(null) // "-"
+ */
+export function formatDateID(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
