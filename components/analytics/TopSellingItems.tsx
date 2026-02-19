@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { ItemSalesData } from "@/lib/analytics";
 
 interface TopSellingItemsProps {
@@ -25,15 +25,6 @@ export function TopSellingItems({
   className,
 }: TopSellingItemsProps) {
   const [showTop, setShowTop] = React.useState(true);
-
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const formatQuantity = (value: number): string => {
     return new Intl.NumberFormat("id-ID").format(value);

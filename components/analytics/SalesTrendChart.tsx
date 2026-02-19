@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export interface SalesTrendData {
   date: string;
@@ -32,15 +32,6 @@ export function SalesTrendChart({ data, className }: SalesTrendChartProps) {
       day: "2-digit",
       month: "short",
     }).format(date);
-  };
-
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const formatTooltip = (payload: any) => {

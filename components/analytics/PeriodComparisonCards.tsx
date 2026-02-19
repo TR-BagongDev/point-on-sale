@@ -9,7 +9,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { PeriodComparisonData } from "@/lib/analytics";
 
 interface PeriodComparisonCardsProps {
@@ -21,15 +21,6 @@ export function PeriodComparisonCards({
   data,
   className,
 }: PeriodComparisonCardsProps) {
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const formatGrowth = (growth: number): string => {
     const sign = growth > 0 ? "+" : "";
     return `${sign}${growth.toFixed(1)}%`;

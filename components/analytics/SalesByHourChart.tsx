@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export interface SalesByHourData {
   hour: number;
@@ -27,15 +27,6 @@ interface SalesByHourChartProps {
 export function SalesByHourChart({ data, className }: SalesByHourChartProps) {
   const formatHour = (hour: number): string => {
     return `${hour}:00`;
-  };
-
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const formatTooltip = (payload: any) => {
