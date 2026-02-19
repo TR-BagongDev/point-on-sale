@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDateID } from "@/lib/utils";
 
 export interface SalesTrendData {
   date: string;
@@ -26,21 +26,13 @@ interface SalesTrendChartProps {
 }
 
 export function SalesTrendChart({ data, className }: SalesTrendChartProps) {
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-    }).format(date);
-  };
-
   const formatTooltip = (payload: any) => {
     if (!payload || !payload.length) return null;
 
     const data = payload[0].payload;
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
-        <p className="text-sm font-semibold">{formatDate(data.date)}</p>
+        <p className="text-sm font-semibold">{formatDateID(data.date)}</p>
         <p className="text-sm text-muted-foreground">
           Penjualan: {formatCurrency(data.total)}
         </p>
@@ -67,7 +59,7 @@ export function SalesTrendChart({ data, className }: SalesTrendChartProps) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={formatDate}
+                  tickFormatter={formatDateID}
                   className="text-xs"
                   tick={{ fontSize: 11 }}
                 />

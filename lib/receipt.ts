@@ -39,7 +39,7 @@ export interface StoreSettings {
   currency?: string;
 }
 
-import { formatCurrency } from "./utils";
+import { formatCurrency, formatDate, formatTime } from "./utils";
 
 export interface ReceiptOptions {
   order: Order;
@@ -74,21 +74,6 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
 
   // Calculate width in characters (approximate: 58mm = 32 chars, 80mm = 48 chars)
   const width = receiptTemplate.paperWidth === 58 ? 32 : 48;
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(date));
-  };
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(date));
-  };
 
   // Generate HTML
   let html = `
@@ -265,7 +250,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     html += `
       <div class="info-row">
         <span>Tanggal:</span>
-        <span>${formatDate(order.createdAt)}</span>
+        <span>${formatDate(order.createdAt.toISOString())}</span>
       </div>
     `;
   }
@@ -274,7 +259,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     html += `
       <div class="info-row">
         <span>Jam:</span>
-        <span>${formatTime(order.createdAt)}</span>
+        <span>${formatTime(order.createdAt.toISOString())}</span>
       </div>
     `;
   }
@@ -367,7 +352,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
   }
 
   html += `
-      <p>${formatDate(order.createdAt)} ${formatTime(order.createdAt)}</p>
+      <p>${formatDate(order.createdAt.toISOString())} ${formatTime(order.createdAt.toISOString())}</p>
     </div>
   `;
 
