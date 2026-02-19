@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Minus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface OrderItem {
   id: string;
@@ -71,14 +72,6 @@ interface OrderModificationDialogProps {
   onOpenChange: (open: boolean) => void;
   onOrderUpdated: () => void;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
 
 export function OrderModificationDialog({
   order,

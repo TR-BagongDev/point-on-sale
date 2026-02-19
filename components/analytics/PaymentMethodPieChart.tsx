@@ -10,7 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export interface PaymentMethodData {
   method: string;
@@ -35,15 +35,6 @@ export function PaymentMethodPieChart({
   data,
   className,
 }: PaymentMethodPieChartProps) {
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const formatTooltip = (payload: any) => {
     if (!payload || !payload.length) return null;
 

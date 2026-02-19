@@ -25,6 +25,7 @@ import type {
   PeriodComparisonData,
 } from "@/lib/analytics";
 import { toast } from "@/lib/toast";
+import { formatCurrency, formatTime, formatDateID } from "@/lib/utils";
 
 interface PaymentMethodData {
   method: string;
@@ -192,29 +193,7 @@ export default function DashboardPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const exportToCSV = () => {
-    const formatDateID = (dateStr: string) => {
-      return new Date(dateStr).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    };
 
     // Summary stats section
     const summaryRows = [

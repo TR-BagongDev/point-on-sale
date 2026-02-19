@@ -41,6 +41,7 @@ import {
 import { Loading } from "@/components/ui/loading";
 import { toast } from "@/lib/toast";
 import { OrderModificationDialog } from "@/components/order/OrderModificationDialog";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface LocalOrder {
   id: string;
@@ -86,24 +87,6 @@ interface OrderModification {
     email: string;
   };
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 export default function PesananPage() {
   const [orders, setOrders] = useState<LocalOrder[]>([]);
