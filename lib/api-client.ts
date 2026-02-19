@@ -5,6 +5,239 @@ import { error as toastError, success as toastSuccess } from "@/lib/toast"
 let offlineStore: any = null
 
 /**
+ * Queued request interface for offline storage
+ */
+interface QueuedRequest {
+  id: string
+  url: string
+  method: string
+  body?: string
+  headers?: Record<string, string>
+  timestamp: number
+  retryCount: number
+}
+
+/**
+ * Offline request queue using IndexedDB for persistence
+ */
+class OfflineRequestQueue {
+  private static DB_NAME = "pos-offline-queue"
+  private static STORE_NAME = "requests"
+  private static MAX_RETRIES = 3
+  private static RETRY_DELAY = 1000 // 1 second
+
+  private db: IDBDatabase | null = null
+  private isProcessing = false
+
+  /**
+   * Initialize IndexedDB
+   */
+  private async initDB(): Promise<IDBDatabase> {
+    if (this.db) {
+      return this.db
+    }
+
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(OfflineRequestQueue.DB_NAME, 1)
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        this.db = request.result
+        resolve(this.db)
+      }
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result
+        if (!db.objectStoreNames.contains(OfflineRequestQueue.STORE_NAME)) {
+          const store = db.createObjectStore(OfflineRequestQueue.STORE_NAME, {
+            keyPath: "id",
+          })
+          store.createIndex("timestamp", "timestamp", { unique: false })
+        }
+      }
+    })
+  }
+
+  /**
+   * Add a request to the queue
+   */
+  async add(request: QueuedRequest): Promise<void> {
+    if (typeof window === "undefined") {
+      return // SSR: skip queueing
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([OfflineRequestQueue.STORE_NAME], "readwrite")
+      const store = transaction.objectStore(OfflineRequestQueue.STORE_NAME)
+      store.add(request)
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to queue offline request")
+    }
+  }
+
+  /**
+   * Get all queued requests
+   */
+  async getAll(): Promise<QueuedRequest[]> {
+    if (typeof window === "undefined") {
+      return []
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([OfflineRequestQueue.STORE_NAME], "readonly")
+      const store = transaction.objectStore(OfflineRequestQueue.STORE_NAME)
+      const request = store.getAll()
+
+      return new Promise<QueuedRequest[]>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result as QueuedRequest[])
+        request.onerror = () => reject(request.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to get queued requests")
+      return []
+    }
+  }
+
+  /**
+   * Remove a request from the queue
+   */
+  async remove(id: string): Promise<void> {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([OfflineRequestQueue.STORE_NAME], "readwrite")
+      const store = transaction.objectStore(OfflineRequestQueue.STORE_NAME)
+      store.delete(id)
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to remove queued request")
+    }
+  }
+
+  /**
+   * Update retry count for a request
+   */
+  async updateRetryCount(id: string, retryCount: number): Promise<void> {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([OfflineRequestQueue.STORE_NAME], "readwrite")
+      const store = transaction.objectStore(OfflineRequestQueue.STORE_NAME)
+
+      const getRequest = store.get(id)
+      getRequest.onsuccess = () => {
+        const data = getRequest.result
+        if (data) {
+          data.retryCount = retryCount
+          store.put(data)
+        }
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to update retry count")
+    }
+  }
+
+  /**
+   * Process all queued requests when coming back online
+   */
+  async processQueue(): Promise<void> {
+    if (this.isProcessing || !isOnline()) {
+      return
+    }
+
+    this.isProcessing = true
+
+    try {
+      const requests = await this.getAll()
+
+      // Sort by timestamp (oldest first)
+      requests.sort((a, b) => a.timestamp - b.timestamp)
+
+      for (const queuedRequest of requests) {
+        // Skip requests that have exceeded max retries
+        if (queuedRequest.retryCount >= OfflineRequestQueue.MAX_RETRIES) {
+          await this.remove(queuedRequest.id)
+          logError(
+            new Error(`Request failed after ${OfflineRequestQueue.MAX_RETRIES} retries`),
+            `Offline queue: ${queuedRequest.method} ${queuedRequest.url}`
+          )
+          continue
+        }
+
+        try {
+          // Retry the request
+          const response = await fetch(queuedRequest.url, {
+            method: queuedRequest.method,
+            headers: queuedRequest.headers,
+            body: queuedRequest.body,
+          })
+
+          if (response.ok) {
+            // Success - remove from queue
+            await this.remove(queuedRequest.id)
+          } else {
+            // Failed - increment retry count and continue
+            await this.updateRetryCount(queuedRequest.id, queuedRequest.retryCount + 1)
+            // Wait before next retry
+            await new Promise((resolve) =>
+              setTimeout(resolve, OfflineRequestQueue.RETRY_DELAY)
+            )
+          }
+        } catch (error) {
+          // Network error - increment retry count and continue
+          await this.updateRetryCount(queuedRequest.id, queuedRequest.retryCount + 1)
+          logError(error, `Offline queue retry: ${queuedRequest.method} ${queuedRequest.url}`)
+          // Wait before next retry
+          await new Promise((resolve) =>
+            setTimeout(resolve, OfflineRequestQueue.RETRY_DELAY)
+          )
+        }
+      }
+
+      // Show success notification if queue was processed
+      if (requests.length > 0) {
+        toastSuccess("Offline changes synced successfully")
+      }
+    } finally {
+      this.isProcessing = false
+    }
+  }
+
+  /**
+   * Get the number of queued requests
+   */
+  async getQueueSize(): Promise<number> {
+    const requests = await this.getAll()
+    return requests.length
+  }
+}
+
+// Create singleton instance
+const offlineQueue = new OfflineRequestQueue()
+
+/**
  * API response wrapper with error details
  */
 export interface ApiResponse<T = unknown> {
@@ -159,6 +392,22 @@ function getOfflineState(): { isOnline: boolean } | null {
 }
 
 /**
+ * Generate unique ID for queued requests
+ */
+function generateRequestId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
+
+/**
+ * Check if a request method is a mutation (should be queued offline)
+ */
+function isMutationMethod(method?: string): boolean {
+  if (!method) return false
+  const upperMethod = method.toUpperCase()
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(upperMethod)
+}
+
+/**
  * Core API request function
  */
 async function request<T>(
@@ -173,9 +422,38 @@ async function request<T>(
     ...fetchOptions
   } = options
 
-  // Check if offline before making request
+  const method = fetchOptions.method?.toUpperCase()
+
+  // Check if offline and this is a mutation request
+  if (!isOnline() && isMutationMethod(method)) {
+    // Queue the request for later
+    const queuedRequest: QueuedRequest = {
+      id: generateRequestId(),
+      url,
+      method: method || "POST",
+      body: fetchOptions.body as string | undefined,
+      headers: fetchOptions.headers as Record<string, string> | undefined,
+      timestamp: Date.now(),
+      retryCount: 0,
+    }
+
+    await offlineQueue.add(queuedRequest)
+
+    // Show info toast to user
+    toastSuccess(
+      successMessage || "Request saved. Will sync when you're back online."
+    )
+
+    // Return empty response for compatibility
+    // The actual result will be processed when queue is processed
+    return {} as T
+  }
+
+  // For GET requests or when online, proceed normally
   if (!isOnline()) {
-    const offlineError = new Error("You are currently offline. Please check your internet connection.")
+    const offlineError = new Error(
+      "You are currently offline. Please check your internet connection."
+    )
     logError(offlineError, context || "API request (offline)")
 
     if (!skipErrorToast) {
@@ -200,7 +478,6 @@ async function request<T>(
     })
 
     // Show success toast for mutations (POST, PUT, PATCH, DELETE)
-    const method = fetchOptions.method?.toUpperCase()
     if (
       !skipSuccessToast &&
       method &&
@@ -220,7 +497,9 @@ async function request<T>(
     // Handle network/fetch errors
     // Check if we went offline during the request
     if (!isOnline()) {
-      const offlineError = new Error("Connection lost. Please check your internet connection.")
+      const offlineError = new Error(
+        "Connection lost. Please check your internet connection."
+      )
       logError(error, context || "API request (connection lost)")
 
       if (!skipErrorToast) {
@@ -240,6 +519,25 @@ async function request<T>(
     throw networkError
   }
 }
+
+/**
+ * Setup online event listener to process queued requests
+ */
+function setupOnlineListener(): void {
+  if (typeof window === "undefined") {
+    return // SSR: skip
+  }
+
+  window.addEventListener("online", () => {
+    // Process the queue when coming back online
+    offlineQueue.processQueue().catch((error) => {
+      logError(error, "Failed to process offline queue")
+    })
+  })
+}
+
+// Initialize the online listener when module loads
+setupOnlineListener()
 
 /**
  * API client object with convenient methods
@@ -321,6 +619,20 @@ export const apiClient = {
    */
   isOnline(): boolean {
     return isOnline()
+  },
+
+  /**
+   * Get the number of pending offline requests
+   */
+  async getPendingRequestsCount(): Promise<number> {
+    return offlineQueue.getQueueSize()
+  },
+
+  /**
+   * Manually trigger processing of offline queue
+   */
+  async processOfflineQueue(): Promise<void> {
+    return offlineQueue.processQueue()
   },
 }
 
