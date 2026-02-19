@@ -310,8 +310,28 @@ export const menusDB = {
       tx.done,
     ]);
   },
+  cacheMenus: async (menus: OfflineMenu[]) => {
+    try {
+      const tx = db.transaction('menus', 'readwrite');
+      await Promise.all([
+        ...menus.map((menu) => tx.store.put(menu)),
+        tx.done,
+      ]);
+    } catch (error) {
+      console.error('[OfflineDB] Error caching menus:', error);
+      throw error;
+    }
+  },
   get: async (id: string) => get<OfflineMenu>('menus', id),
   getAll: async () => getAll<OfflineMenu>('menus'),
+  getMenus: async () => {
+    try {
+      return await getAll<OfflineMenu>('menus');
+    } catch (error) {
+      console.error('[OfflineDB] Error getting menus from cache:', error);
+      throw error;
+    }
+  },
   getByCategory: async (categoryId: string) =>
     getAllFromIndex<OfflineMenu>('menus', 'by-categoryId', categoryId),
   getAvailable: async () =>
@@ -319,6 +339,14 @@ export const menusDB = {
   update: async (menu: OfflineMenu) => put('menus', menu),
   delete: async (id: string) => remove('menus', id),
   clear: async () => clear('menus'),
+  clearMenus: async () => {
+    try {
+      await clear('menus');
+    } catch (error) {
+      console.error('[OfflineDB] Error clearing menu cache:', error);
+      throw error;
+    }
+  },
   count: async () => count('menus'),
 };
 
