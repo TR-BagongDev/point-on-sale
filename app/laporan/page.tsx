@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { printReceipt, type Order } from "@/lib/receipt";
 import { toast } from "@/lib/toast";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface LocalOrder {
   id: string;
@@ -62,24 +63,6 @@ interface ReportStats {
   totalTax: number;
   totalDiscount: number;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 const TAX_RATE = 10; // 10% Pajak
 
