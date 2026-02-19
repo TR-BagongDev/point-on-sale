@@ -34,7 +34,7 @@ import {
   Printer,
   Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
 import { toast } from "@/lib/toast";
 import { useAccessibility } from "@/lib/accessibility-context";
@@ -133,14 +133,6 @@ export function KasirClient() {
   const tax = getTax(TAX_RATE);
   const total = getTotal(TAX_RATE, discount);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const handleCheckout = async (paymentMethod: string) => {
     setIsCheckingOut(true);
     try {
@@ -171,7 +163,6 @@ export function KasirClient() {
 
       const createdOrder: Order = await res.json();
 
-<<<<<<< HEAD
       // Clear cart and close dialog
       clearCart();
       setShowCheckout(false);
@@ -202,32 +193,6 @@ export function KasirClient() {
         toast.warning("Gagal mencetak struk", {
           description: "Pesanan tetap berhasil dibuat",
         });
-=======
-        // Show success message
-        toast.success("Pesanan berhasil dibuat!", {
-          description: `Total: ${formatCurrency(total)}`,
-        });
-
-        // Auto-print receipt
-        try {
-          printReceipt({
-            order: createdOrder,
-            template: {
-              paperWidth: 80, // Default to 80mm thermal printer
-            },
-            settings: {
-              storeName: "Warung Nasi Goreng",
-              address: "",
-              phone: "",
-              taxRate: TAX_RATE,
-              currency: "IDR",
-            },
-          });
-        } catch (printError) {
-          console.error("Print failed:", printError);
-          // Still show success even if print fails
-        }
->>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
       }
     } catch (error) {
       toast.error("Gagal memproses pesanan", {
@@ -244,23 +209,20 @@ export function KasirClient() {
   };
 
   return (
-<<<<<<< HEAD
-    <div className="flex gap-6 h-[calc(100vh-3rem)]">
+    <TooltipProvider>
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Memuat data...</p>
+        <div className="flex gap-6 h-[calc(100vh-3rem)]">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Memuat data...</p>
+            </div>
           </div>
         </div>
       ) : (
-        <>
-=======
-    <TooltipProvider>
-      <div className="flex gap-6 h-[calc(100vh-3rem)]">
->>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
-      {/* Menu Section */}
-      <div className="flex-1 flex flex-col">
+        <div className="flex gap-6 h-[calc(100vh-3rem)]">
+          {/* Menu Section */}
+          <div className="flex-1 flex flex-col">
         {/* Search */}
         <div className="mb-4">
           <div className="relative">
@@ -514,71 +476,25 @@ export function KasirClient() {
             </div>
           )}
           <div className="grid grid-cols-3 gap-3 py-4">
-<<<<<<< HEAD
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("CASH")}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? (
-                <>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                  <span>Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <Banknote className="h-8 w-8" />
-                  <span>Tunai</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("QRIS")}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? (
-                <>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                  <span>Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <QrCode className="h-8 w-8" />
-                  <span>QRIS</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-24 flex-col gap-2"
-              onClick={() => handleCheckout("DEBIT")}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? (
-                <>
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                  <span>Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard className="h-8 w-8" />
-                  <span>Debit</span>
-                </>
-              )}
-            </Button>
-=======
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   className="h-24 flex-col gap-2"
                   onClick={() => handleCheckout("CASH")}
+                  disabled={isCheckingOut}
                 >
-                  <Banknote className="h-8 w-8" />
-                  <span>Tunai</span>
+                  {isCheckingOut ? (
+                    <>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Banknote className="h-8 w-8" />
+                      <span>Tunai</span>
+                    </>
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -591,9 +507,19 @@ export function KasirClient() {
                   variant="outline"
                   className="h-24 flex-col gap-2"
                   onClick={() => handleCheckout("QRIS")}
+                  disabled={isCheckingOut}
                 >
-                  <QrCode className="h-8 w-8" />
-                  <span>QRIS</span>
+                  {isCheckingOut ? (
+                    <>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="h-8 w-8" />
+                      <span>QRIS</span>
+                    </>
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -606,16 +532,25 @@ export function KasirClient() {
                   variant="outline"
                   className="h-24 flex-col gap-2"
                   onClick={() => handleCheckout("DEBIT")}
+                  disabled={isCheckingOut}
                 >
-                  <CreditCard className="h-8 w-8" />
-                  <span>Debit</span>
+                  {isCheckingOut ? (
+                    <>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-8 w-8" />
+                      <span>Debit</span>
+                    </>
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Bayar dengan kartu debit</p>
               </TooltipContent>
             </Tooltip>
->>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-primary-600">{formatCurrency(total)}</p>
@@ -627,9 +562,8 @@ export function KasirClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
-      )}
     </div>
+      )}
     </TooltipProvider>
   );
 }
