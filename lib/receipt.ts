@@ -39,21 +39,12 @@ export interface StoreSettings {
   currency?: string;
 }
 
+import { formatCurrency } from "./utils";
+
 export interface ReceiptOptions {
   order: Order;
   template?: Partial<ReceiptTemplate>;
   settings?: Partial<StoreSettings>;
-}
-
-/**
- * Format currency for receipts using Indonesian locale
- */
-export function formatReceiptCurrency(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
 }
 
 /**
@@ -307,10 +298,10 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
       <div class="item">
         <div class="item-details">
           <div class="item-name">${item.menu.name}</div>
-          <div class="item-qty">${item.quantity} x ${formatReceiptCurrency(item.price)}</div>
+          <div class="item-qty">${item.quantity} x ${formatCurrency(item.price)}</div>
           ${item.notes ? `<div class="item-notes">${item.notes}</div>` : ""}
         </div>
-        <div class="item-price">${formatReceiptCurrency(itemTotal)}</div>
+        <div class="item-price">${formatCurrency(itemTotal)}</div>
       </div>
     `;
   });
@@ -321,7 +312,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     <div class="totals">
       <div class="total-row">
         <span>Subtotal:</span>
-        <span>${formatReceiptCurrency(order.subtotal)}</span>
+        <span>${formatCurrency(order.subtotal)}</span>
       </div>
   `;
 
@@ -329,7 +320,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     html += `
       <div class="total-row">
         <span>Pajak (${storeSettings.taxRate}%):</span>
-        <span>${formatReceiptCurrency(order.tax)}</span>
+        <span>${formatCurrency(order.tax)}</span>
       </div>
     `;
   }
@@ -338,7 +329,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     html += `
       <div class="total-row">
         <span>Diskon:</span>
-        <span>-${formatReceiptCurrency(order.discount)}</span>
+        <span>-${formatCurrency(order.discount)}</span>
       </div>
     `;
   }
@@ -346,7 +337,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
   html += `
       <div class="total-row grand-total">
         <span>TOTAL:</span>
-        <span>${formatReceiptCurrency(order.total)}</span>
+        <span>${formatCurrency(order.total)}</span>
       </div>
     </div>
   `;
