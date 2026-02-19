@@ -20,17 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, UtensilsCrossed } from "lucide-react";
-<<<<<<< HEAD
 import { Loading } from "@/components/ui/loading";
 import { toast } from "@/lib/toast";
-=======
+import { formatCurrency } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
->>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
 
 interface Menu {
   id: string;
@@ -53,14 +51,6 @@ interface Category {
   color: string | null;
   icon: string | null;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
 
 export default function MenuPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
@@ -361,29 +351,6 @@ export default function MenuPage() {
                             </p>
                           </div>
                           <div className="flex gap-1">
-<<<<<<< HEAD
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog(menu)}
-                              disabled={isDeleting === menu.id || isToggling === menu.id}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(menu.id)}
-                              disabled={isDeleting === menu.id || isToggling === menu.id}
-                            >
-                              {isDeleting === menu.id ? (
-                                <Loading size="sm" className="text-current" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-=======
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -392,6 +359,7 @@ export default function MenuPage() {
                                     size="icon"
                                     className="h-11 w-11 min-h-[44px] min-w-[44px]"
                                     onClick={() => handleOpenDialog(menu)}
+                                    disabled={isDeleting === menu.id || isToggling === menu.id}
                                   >
                                     <Pencil className="h-4 w-4" />
                                   </Button>
@@ -409,8 +377,13 @@ export default function MenuPage() {
                                     size="icon"
                                     className="h-11 w-11 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
                                     onClick={() => handleDelete(menu.id)}
+                                    disabled={isDeleting === menu.id || isToggling === menu.id}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    {isDeleting === menu.id ? (
+                                      <Loading size="sm" className="text-current" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -418,7 +391,6 @@ export default function MenuPage() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
->>>>>>> 7286b445a4f7add3a70b24597f062eb2f3b1c52b
                           </div>
                         </div>
                       ))}
