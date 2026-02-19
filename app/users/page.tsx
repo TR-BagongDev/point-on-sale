@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/ui/loading";
 import { Users, UserCheck, UserX, Shield } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { formatDate } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -40,17 +41,6 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const getRoleBadge = (role: string) => {
