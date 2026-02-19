@@ -1,6 +1,9 @@
 import { getUserMessage, logError } from "@/lib/error-handler"
 import { error as toastError, success as toastSuccess } from "@/lib/toast"
 
+// Import offline store (lazy import to avoid SSR issues)
+let offlineStore: any = null
+
 /**
  * API response wrapper with error details
  */
@@ -130,6 +133,32 @@ function buildQueryString(params: Record<string, string | number | boolean | und
 }
 
 /**
+ * Check if the app is currently online
+ * Uses navigator.onLine as the source of truth
+ */
+function isOnline(): boolean {
+  if (typeof navigator === "undefined") {
+    return true // SSR: assume online
+  }
+  return navigator.onLine
+}
+
+/**
+ * Get offline state from store
+ * Returns null if store is not available (SSR)
+ */
+function getOfflineState(): { isOnline: boolean } | null {
+  if (typeof window === "undefined" || !offlineStore) {
+    return null
+  }
+  try {
+    return offlineStore.getState()
+  } catch {
+    return null
+  }
+}
+
+/**
  * Core API request function
  */
 async function request<T>(
@@ -143,6 +172,18 @@ async function request<T>(
     context,
     ...fetchOptions
   } = options
+
+  // Check if offline before making request
+  if (!isOnline()) {
+    const offlineError = new Error("You are currently offline. Please check your internet connection.")
+    logError(offlineError, context || "API request (offline)")
+
+    if (!skipErrorToast) {
+      toastError(getUserMessage(offlineError))
+    }
+
+    throw offlineError
+  }
 
   try {
     const response = await fetch(url, {
@@ -177,6 +218,18 @@ async function request<T>(
     }
 
     // Handle network/fetch errors
+    // Check if we went offline during the request
+    if (!isOnline()) {
+      const offlineError = new Error("Connection lost. Please check your internet connection.")
+      logError(error, context || "API request (connection lost)")
+
+      if (!skipErrorToast) {
+        toastError(getUserMessage(offlineError))
+      }
+
+      throw offlineError
+    }
+
     const networkError = new Error("Network error. Please check your connection.")
     logError(error, context)
 
@@ -260,6 +313,14 @@ export const apiClient = {
       ...options,
       method: "DELETE",
     })
+  },
+
+  /**
+   * Check if currently online
+   * Uses navigator.onLine as source of truth
+   */
+  isOnline(): boolean {
+    return isOnline()
   },
 }
 
