@@ -55,11 +55,13 @@ export async function POST(request: NextRequest) {
 
     const syncedOrders: unknown[] = [];
     const failedOrders: { order: unknown; error: string }[] = [];
+    const skippedOrders: { order: unknown; reason: string }[] = [];
 
     // Process each order
     for (const orderData of orders) {
       try {
         const {
+          orderNumber,
           items,
           subtotal,
           tax,
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
           paymentMethod,
           notes,
           createdAt,
+          updatedAt,
         } = orderData;
 
         // Validate items array
@@ -251,12 +254,83 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Create order with items
-        const orderNumber = generateOrderNumber();
+        // Generate order number if not provided
+        const finalOrderNumber = orderNumber || generateOrderNumber();
 
+        // Check for existing order (conflict detection)
+        const existingOrder = await prisma.order.findUnique({
+          where: { orderNumber: finalOrderNumber },
+        });
+
+        // Conflict resolution: if order exists, use last-write-wins based on updatedAt
+        if (existingOrder) {
+          const existingTimestamp = existingOrder.updatedAt.getTime();
+          const incomingTimestamp = updatedAt ? new Date(updatedAt).getTime() : (createdAt ? new Date(createdAt).getTime() : Date.now());
+
+          // Skip if existing order is newer or same age (keep existing)
+          if (existingTimestamp >= incomingTimestamp) {
+            skippedOrders.push({
+              order: orderData,
+              reason: `Existing order is newer or same version (existing: ${existingOrder.updatedAt.toISOString()}, incoming: ${new Date(incomingTimestamp).toISOString()})`
+            });
+            continue;
+          }
+
+          // Update existing order if incoming is newer
+          // Delete existing items and recreate them
+          await prisma.orderItem.deleteMany({
+            where: { orderId: existingOrder.id },
+          });
+
+          const updatedOrder = await prisma.order.update({
+            where: { id: existingOrder.id },
+            data: {
+              subtotal: parsedSubtotal,
+              tax: parsedTax,
+              discount: parsedDiscount,
+              total: parsedTotal,
+              paymentMethod: paymentMethod ?? existingOrder.paymentMethod,
+              status: existingOrder.status, // Preserve status
+              notes: notes?.trim() || existingOrder.notes,
+              items: {
+                create: parsedItems.map((item) => ({
+                  menuId: item.menuId,
+                  quantity: item.quantity,
+                  price: item.price,
+                  notes: item.notes,
+                })),
+              },
+            },
+            include: {
+              items: {
+                include: {
+                  menu: true,
+                },
+              },
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          });
+
+          syncedOrders.push({
+            ...updatedOrder,
+            conflictResolved: true,
+            resolution: "updated",
+            previousVersion: {
+              updatedAt: existingOrder.updatedAt,
+            },
+          });
+          continue;
+        }
+
+        // Create new order if no conflict
         const order = await prisma.order.create({
           data: {
-            orderNumber,
+            orderNumber: finalOrderNumber,
             userId: user.id,
             subtotal: parsedSubtotal,
             tax: parsedTax,
@@ -307,9 +381,11 @@ export async function POST(request: NextRequest) {
       success: true,
       synced: syncedOrders,
       failed: failedOrders,
+      skipped: skippedOrders,
       total: orders.length,
       syncedCount: syncedOrders.length,
       failedCount: failedOrders.length,
+      skippedCount: skippedOrders.length,
     });
   } catch (error) {
     console.error("Error in sync endpoint:", error);
