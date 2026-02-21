@@ -234,8 +234,226 @@ class OfflineRequestQueue {
   }
 }
 
-// Create singleton instance
+/**
+ * Cached menu data interface
+ */
+interface CachedMenuData {
+  data: unknown[]
+  timestamp: number
+  version: number
+}
+
+/**
+ * Menu cache using IndexedDB for offline storage
+ */
+class MenuCache {
+  private static DB_NAME = "pos-menu-cache"
+  private static STORE_NAME = "menus"
+  private static CACHE_KEY = "current"
+  private static CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+  private static CACHE_VERSION = 1
+
+  private db: IDBDatabase | null = null
+  private isRefreshing = false
+  private refreshInterval: ReturnType<typeof setInterval> | null = null
+
+  /**
+   * Initialize IndexedDB
+   */
+  private async initDB(): Promise<IDBDatabase> {
+    if (this.db) {
+      return this.db
+    }
+
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(MenuCache.DB_NAME, 1)
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        this.db = request.result
+        resolve(this.db)
+      }
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result
+        if (!db.objectStoreNames.contains(MenuCache.STORE_NAME)) {
+          const store = db.createObjectStore(MenuCache.STORE_NAME, {
+            keyPath: "key",
+          })
+          store.createIndex("timestamp", "timestamp", { unique: false })
+        }
+      }
+    })
+  }
+
+  /**
+   * Set menu data in cache
+   */
+  async set(data: unknown[]): Promise<void> {
+    if (typeof window === "undefined") {
+      return // SSR: skip caching
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([MenuCache.STORE_NAME], "readwrite")
+      const store = transaction.objectStore(MenuCache.STORE_NAME)
+
+      const cachedData: CachedMenuData = {
+        data,
+        timestamp: Date.now(),
+        version: MenuCache.CACHE_VERSION,
+      }
+
+      store.put({ key: MenuCache.CACHE_KEY, ...cachedData })
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to cache menu data")
+    }
+  }
+
+  /**
+   * Get menu data from cache
+   */
+  async get(): Promise<CachedMenuData | null> {
+    if (typeof window === "undefined") {
+      return null // SSR: no cache
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([MenuCache.STORE_NAME], "readonly")
+      const store = transaction.objectStore(MenuCache.STORE_NAME)
+      const request = store.get(MenuCache.CACHE_KEY)
+
+      return new Promise<CachedMenuData | null>((resolve, reject) => {
+        request.onsuccess = () => {
+          const cachedData = request.result as CachedMenuData | undefined
+          resolve(cachedData || null)
+        }
+        request.onerror = () => reject(request.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to get cached menu data")
+      return null
+    }
+  }
+
+  /**
+   * Check if cache is valid (not expired)
+   */
+  async isValid(): Promise<boolean> {
+    const cachedData = await this.get()
+
+    if (!cachedData) {
+      return false
+    }
+
+    // Check version compatibility
+    if (cachedData.version !== MenuCache.CACHE_VERSION) {
+      return false
+    }
+
+    // Check expiry
+    const now = Date.now()
+    const age = now - cachedData.timestamp
+
+    return age < MenuCache.CACHE_DURATION
+  }
+
+  /**
+   * Clear the cache
+   */
+  async clear(): Promise<void> {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    try {
+      const db = await this.initDB()
+      const transaction = db.transaction([MenuCache.STORE_NAME], "readwrite")
+      const store = transaction.objectStore(MenuCache.STORE_NAME)
+      store.delete(MenuCache.CACHE_KEY)
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve()
+        transaction.onerror = () => reject(transaction.error)
+      })
+    } catch (error) {
+      logError(error, "Failed to clear menu cache")
+    }
+  }
+
+  /**
+   * Refresh menu data in background
+   * @param fetchFn Function to fetch fresh menu data
+   */
+  async refreshInBackground(fetchFn: () => Promise<unknown[]>): Promise<void> {
+    if (this.isRefreshing || !isOnline()) {
+      return
+    }
+
+    this.isRefreshing = true
+
+    try {
+      const freshData = await fetchFn()
+      await this.set(freshData)
+    } catch (error) {
+      // Silently fail - don't show errors for background refresh
+      logError(error, "Background menu refresh failed")
+    } finally {
+      this.isRefreshing = false
+    }
+  }
+
+  /**
+   * Start periodic background refresh
+   * @param fetchFn Function to fetch fresh menu data
+   * @param intervalMs Refresh interval in milliseconds (default: 5 minutes)
+   */
+  startPeriodicRefresh(fetchFn: () => Promise<unknown[]>, intervalMs: number = MenuCache.CACHE_DURATION): void {
+    if (typeof window === "undefined") {
+      return // SSR: skip
+    }
+
+    // Clear existing interval if any
+    this.stopPeriodicRefresh()
+
+    // Set up new interval
+    this.refreshInterval = setInterval(() => {
+      if (isOnline()) {
+        this.refreshInBackground(fetchFn).catch((error) => {
+          logError(error, "Periodic menu refresh failed")
+        })
+      }
+    }, intervalMs)
+  }
+
+  /**
+   * Stop periodic background refresh
+   */
+  stopPeriodicRefresh(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval)
+      this.refreshInterval = null
+    }
+  }
+
+  /**
+   * Check if currently refreshing
+   */
+  getIsRefreshing(): boolean {
+    return this.isRefreshing
+  }
+}
+
+// Create singleton instances
 const offlineQueue = new OfflineRequestQueue()
+const menuCache = new MenuCache()
 
 /**
  * API response wrapper with error details
@@ -521,7 +739,7 @@ async function request<T>(
 }
 
 /**
- * Setup online event listener to process queued requests
+ * Setup online event listener to process queued requests and refresh menu cache
  */
 function setupOnlineListener(): void {
   if (typeof window === "undefined") {
@@ -532,6 +750,18 @@ function setupOnlineListener(): void {
     // Process the queue when coming back online
     offlineQueue.processQueue().catch((error) => {
       logError(error, "Failed to process offline queue")
+    })
+
+    // Refresh menu cache in background when coming back online
+    menuCache.refreshInBackground(async () => {
+      // Fetch fresh menu data from API
+      const response = await fetch("/api/menu")
+      if (!response.ok) {
+        throw new Error("Failed to fetch menu data")
+      }
+      return await response.json()
+    }).catch((error) => {
+      logError(error, "Failed to refresh menu cache after coming online")
     })
   })
 }
@@ -633,6 +863,111 @@ export const apiClient = {
    */
   async processOfflineQueue(): Promise<void> {
     return offlineQueue.processQueue()
+  },
+
+  /**
+   * Get menu data with caching support
+   * Returns cached data if offline, otherwise fetches fresh data and updates cache
+   */
+  async getMenu(options?: RequestOptions): Promise<unknown[]> {
+    const menuUrl = "/api/menu"
+
+    // If offline, try to return cached data
+    if (!isOnline()) {
+      const cachedData = await menuCache.get()
+      if (cachedData) {
+        return cachedData.data as unknown[]
+      }
+
+      // No cached data available - throw offline error
+      const offlineError = new Error(
+        "You are currently offline and no menu data is cached."
+      )
+      logError(offlineError, "Get menu (offline, no cache)")
+
+      if (!options?.skipErrorToast) {
+        toastError(getUserMessage(offlineError.message))
+      }
+
+      throw offlineError
+    }
+
+    // Online - fetch fresh data
+    try {
+      const data = await this.get<unknown[]>(menuUrl, undefined, options)
+
+      // Update cache with fresh data
+      await menuCache.set(data)
+
+      return data
+    } catch (error) {
+      // If fetch fails, try to fall back to cache
+      const cachedData = await menuCache.get()
+
+      if (cachedData && cachedData.data.length > 0) {
+        // Return stale cache as fallback
+        logError(
+          error,
+          "Get menu failed, returning stale cache"
+        )
+        return cachedData.data as unknown[]
+      }
+
+      // Re-throw the original error if no cache available
+      throw error
+    }
+  },
+
+  /**
+   * Manually trigger menu cache refresh
+   */
+  async refreshMenuCache(): Promise<void> {
+    if (!isOnline()) {
+      throw new Error("Cannot refresh menu cache while offline")
+    }
+
+    return menuCache.refreshInBackground(async () => {
+      const response = await fetch("/api/menu")
+      if (!response.ok) {
+        throw new Error("Failed to fetch menu data")
+      }
+      return await response.json()
+    })
+  },
+
+  /**
+   * Clear the menu cache
+   */
+  async clearMenuCache(): Promise<void> {
+    return menuCache.clear()
+  },
+
+  /**
+   * Check if menu cache is valid
+   */
+  async isMenuCacheValid(): Promise<boolean> {
+    return menuCache.isValid()
+  },
+
+  /**
+   * Start periodic menu cache refresh
+   * @param intervalMs Refresh interval in milliseconds (default: 5 minutes)
+   */
+  startMenuCacheRefresh(intervalMs?: number): void {
+    menuCache.startPeriodicRefresh(async () => {
+      const response = await fetch("/api/menu")
+      if (!response.ok) {
+        throw new Error("Failed to fetch menu data")
+      }
+      return await response.json()
+    }, intervalMs)
+  },
+
+  /**
+   * Stop periodic menu cache refresh
+   */
+  stopMenuCacheRefresh(): void {
+    menuCache.stopPeriodicRefresh()
   },
 }
 
