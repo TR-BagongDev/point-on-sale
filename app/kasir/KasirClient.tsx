@@ -22,6 +22,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCartStore, type CartItem } from "@/store/cart";
+import { useOfflineStore } from "@/store/offline-store";
+import { useSyncQueueStore } from "@/store/sync-queue";
+import { OfflineBanner } from "@/components/offline/OfflineBanner";
+import { SyncStatusIndicator } from "@/components/offline/SyncStatusIndicator";
 import {
   Plus,
   Minus,
@@ -76,6 +80,11 @@ export function KasirClient() {
   const [loading, setLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  // Offline and sync state
+  const isOnline = useOfflineStore((state) => state.isOnline);
+  const isSyncing = useSyncQueueStore((state) => state.isSyncing);
+  const pendingCount = useSyncQueueStore((state) => state.getPendingCount());
+
   const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
 
   async function fetchMenus() {
@@ -112,6 +121,9 @@ export function KasirClient() {
   useEffect(() => {
     fetchMenus();
     fetchCategories();
+
+    // Initialize offline listeners
+    useOfflineStore.getState().initializeOnlineListeners();
   }, []);
 
   const handleAddToCart = (menu: Menu) => {
@@ -151,6 +163,13 @@ export function KasirClient() {
         notes: orderNotes,
       };
 
+      // Show offline message if applicable
+      if (!isOnline) {
+        toast.info("Mode Offline", {
+          description: "Pesanan akan disimpan secara lokal dan disinkronkan saat Anda kembali online.",
+        });
+      }
+
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -169,9 +188,16 @@ export function KasirClient() {
       setDiscount(0);
       setOrderNotes("");
 
-      toast.success("Pesanan berhasil dibuat!", {
-        description: `Total: ${formatCurrency(total)}`,
-      });
+      // Show appropriate success message
+      if (isOnline) {
+        toast.success("Pesanan berhasil dibuat!", {
+          description: `Total: ${formatCurrency(total)}`,
+        });
+      } else {
+        toast.success("Pesanan disimpan secara lokal", {
+          description: `Total: ${formatCurrency(total)}. Akan disinkronkan saat online.`,
+        });
+      }
 
       // Auto-print receipt
       try {
@@ -208,8 +234,17 @@ export function KasirClient() {
     await handleCheckout("CASH");
   };
 
+  // Determine sync status for indicator
+  const getSyncStatus = (): "online" | "offline" | "syncing" | "pending" => {
+    if (isSyncing) return "syncing";
+    if (!isOnline) return "offline";
+    if (pendingCount > 0) return "pending";
+    return "online";
+  };
+
   return (
     <TooltipProvider>
+      <OfflineBanner />
       {loading ? (
         <div className="flex gap-6 h-[calc(100vh-3rem)]">
           <div className="flex-1 flex items-center justify-center">
@@ -289,10 +324,18 @@ export function KasirClient() {
               <ShoppingCart className="h-5 w-5" />
               Keranjang
             </CardTitle>
-            {items.length > 0 && (
-              <Badge variant="secondary">{getItemCount()} item</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              <SyncStatusIndicator status={getSyncStatus()} />
+              {items.length > 0 && (
+                <Badge variant="secondary">{getItemCount()} item</Badge>
+              )}
+            </div>
           </div>
+          {pendingCount > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {pendingCount} pesanan menunggu sinkronisasi
+            </p>
+          )}
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-0">
           {items.length === 0 ? (
