@@ -62,11 +62,10 @@ const globalForPrisma = globalThis as unknown as {
 export function getTestPrisma(): PrismaClient {
   if (!globalForPrisma.testPrisma) {
     globalForPrisma.testPrisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.TEST_DATABASE_URL || 'file:./test.db',
-        },
-      },
+      accelerateUrl:
+        process.env.ACCELERATE_URL ??
+        process.env.DATABASE_URL ??
+        "prisma://localhost?api_key=local-dev",
       log: process.env.DEBUG ? ['query', 'error', 'warn'] : ['error'],
     });
   }
@@ -80,6 +79,7 @@ export async function cleanupTestDatabase() {
   const prisma = getTestPrisma();
 
   // Delete all data in correct order due to foreign key constraints
+  await prisma.orderModification.deleteMany({});
   await prisma.orderItem.deleteMany({});
   await prisma.order.deleteMany({});
   await prisma.menu.deleteMany({});
@@ -87,7 +87,7 @@ export async function cleanupTestDatabase() {
   await prisma.session.deleteMany({});
   await prisma.account.deleteMany({});
   await prisma.user.deleteMany({});
-  await prisma.settings.deleteMany({});
+  await prisma.setting.deleteMany({});
   await prisma.receiptTemplate.deleteMany({});
   await prisma.activityLog.deleteMany({});
 }

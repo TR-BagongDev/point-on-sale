@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import type { User, Category, Menu, Order, OrderItem, Settings } from '@prisma/client';
+import type { User, Category, Menu, Order, OrderItem, Setting } from '@prisma/client';
 
 // ============================================================================
 // Mock User Data
@@ -233,7 +233,7 @@ export const mockSettings = {
   locale: 'id-ID',
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
-} as Settings;
+} as Setting;
 
 // ============================================================================
 // Mock Receipt Template Data
