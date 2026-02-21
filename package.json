@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "test:unit": "vitest",
+    "test:integration": "vitest --config=vitest.config.ts --run",
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest --coverage"
   },
   "repository": {
     "type": "git",
