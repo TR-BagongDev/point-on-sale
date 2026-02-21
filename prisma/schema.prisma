@@ -59,6 +59,7 @@ model Order {
   notes         String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
+  syncedAt      DateTime?
   user          User                @relation(fields: [userId], references: [id])
   items         OrderItem[]
   modifications OrderModification[]
