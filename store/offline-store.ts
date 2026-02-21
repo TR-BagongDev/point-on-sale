@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useSyncQueueStore } from "./sync-queue";
 
 /**
  * Offline state management
@@ -20,10 +21,13 @@ let setOnlineState: ((status: boolean) => void) | null = null;
 
 /**
  * Handle online event
+ * Triggers automatic sync of pending operations
  */
-function handleOnline() {
+async function handleOnline() {
   if (setOnlineState) {
     setOnlineState(true);
+    // Trigger automatic sync when connection is restored
+    await useSyncQueueStore.getState().processQueue();
   }
 }
 
