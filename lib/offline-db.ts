@@ -151,9 +151,14 @@ async function createOfflineDB(): Promise<IDBPDatabase<OfflineDB>> {
 // Database Instance Export
 // ============================================================================
 
-export const db = globalForDB.offlineDB ?? await createOfflineDB();
+// Only initialize IndexedDB in browser environment
+const isBrowser = typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
 
-if (process.env.NODE_ENV !== 'production') {
+export const db = isBrowser
+  ? (globalForDB.offlineDB ?? await createOfflineDB())
+  : null;
+
+if (process.env.NODE_ENV !== 'production' && isBrowser && db) {
   globalForDB.offlineDB = db;
 }
 
@@ -171,6 +176,7 @@ export async function get<T>(
   key: string
 ): Promise<T | undefined> {
   try {
+    if (!db) return undefined;
     return await db.get(storeName, key);
   } catch (error) {
     console.error(`[OfflineDB] Error getting item from ${storeName}:`, error);
@@ -183,6 +189,7 @@ export async function get<T>(
  */
 export async function getAll<T>(storeName: OfflineStoreName): Promise<T[]> {
   try {
+    if (!db) return [];
     return await db.getAll(storeName);
   } catch (error) {
     console.error(`[OfflineDB] Error getting all items from ${storeName}:`, error);
@@ -199,6 +206,7 @@ export async function getAllFromIndex<T>(
   indexValue: string | boolean | number
 ): Promise<T[]> {
   try {
+    if (!db) return [];
     return await db.getAllFromIndex(storeName, indexName, indexValue);
   } catch (error) {
     console.error(
@@ -217,6 +225,7 @@ export async function put<T>(
   value: T
 ): Promise<string> {
   try {
+    if (!db) throw new Error('IndexedDB not available');
     const key = await db.put(storeName, value);
     return key as string;
   } catch (error) {
@@ -233,6 +242,7 @@ export async function remove(
   key: string
 ): Promise<void> {
   try {
+    if (!db) return;
     await db.delete(storeName, key);
   } catch (error) {
     console.error(`[OfflineDB] Error deleting item from ${storeName}:`, error);
@@ -245,6 +255,7 @@ export async function remove(
  */
 export async function clear(storeName: OfflineStoreName): Promise<void> {
   try {
+    if (!db) return;
     await db.clear(storeName);
   } catch (error) {
     console.error(`[OfflineDB] Error clearing ${storeName}:`, error);
@@ -257,6 +268,7 @@ export async function clear(storeName: OfflineStoreName): Promise<void> {
  */
 export async function count(storeName: OfflineStoreName): Promise<number> {
   try {
+    if (!db) return 0;
     return await db.count(storeName);
   } catch (error) {
     console.error(`[OfflineDB] Error counting items in ${storeName}:`, error);
@@ -414,6 +426,7 @@ export function isIndexedDBSupported(): boolean {
  */
 export async function closeDB(): Promise<void> {
   try {
+    if (!db) return;
     db.close();
     if (process.env.NODE_ENV !== 'production') {
       globalForDB.offlineDB = undefined;
@@ -430,7 +443,9 @@ export async function closeDB(): Promise<void> {
 export async function deleteDB(): Promise<void> {
   try {
     await closeDB();
-    await indexedDB.deleteDatabase(DB_NAME);
+    if (typeof indexedDB !== 'undefined') {
+      await indexedDB.deleteDatabase(DB_NAME);
+    }
   } catch (error) {
     console.error('[OfflineDB] Error deleting database:', error);
     throw error;
