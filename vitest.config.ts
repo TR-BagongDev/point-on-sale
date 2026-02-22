@@ -9,7 +9,7 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'json-summary', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'test/',
@@ -20,7 +20,12 @@ export default defineConfig({
         'prisma/',
         'scripts/',
         'types/',
+        'e2e/',
       ],
+      // Configuration for reports
+      reportsDirectory: './coverage',
+      // Include all source files in coverage
+      all: true,
     },
     include: ['**/__tests__/**/*.{test,spec}.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
     exclude: [
