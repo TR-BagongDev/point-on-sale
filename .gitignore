@@ -20,3 +20,11 @@ node_modules
 dev.db
 next-env.d.ts
 /lib/generated/prisma
+
+# Test coverage and reports
+coverage/
+playwright-report/
+test-results/
+
+# TypeScript build
+*.tsbuildinfo
