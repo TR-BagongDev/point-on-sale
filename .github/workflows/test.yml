@@ -8,7 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Unit and Integration Tests
+  # ==============================
+  # Unit & Integration Tests
+  # ==============================
   unit-integration-tests:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
@@ -26,47 +28,51 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
-        run: npm run test:unit -- --run
-        continue-on-error: true
+      # 🔥 WAJIB untuk Prisma
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - name: Run integration tests
-        run: npm run test:integration
-        continue-on-error: true
-
-      - name: Generate coverage report
+      - name: Run unit tests with coverage
         run: npx vitest run --coverage --exclude='**/offline-db.test.ts'
-        if: always()
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: always()
         with:
           files: ./coverage/lcov.info
           flags: unittests
-          name: codecov-umbrella
+          name: codecov-report
           fail_ci_if_error: false
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
 
-      - name: Check coverage threshold
+      - name: Install coverage tools
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Check coverage threshold (min 70%)
         run: |
-          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "❌ coverage-summary.json not found"
+            exit 1
+          fi
+
+          COVERAGE=$(jq '.total.lines.pct' coverage/coverage-summary.json)
           echo "Current coverage: ${COVERAGE}%"
+
           if (( $(echo "$COVERAGE < 70" | bc -l) )); then
             echo "❌ Coverage ${COVERAGE}% is below minimum 70%"
             exit 1
           fi
-          echo "✅ Coverage ${COVERAGE}% meets minimum threshold"
-        continue-on-error: false
 
+          echo "✅ Coverage ${COVERAGE}% meets minimum threshold"
+
+  # ==============================
   # E2E Tests
+  # ==============================
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -84,6 +90,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -124,7 +133,9 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  # Lint and Type Check
+  # ==============================
+  # Lint & Type Check
+  # ==============================
   lint-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -142,13 +153,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
       - name: Run ESLint
         run: npm run lint
 
       - name: TypeScript type check
         run: npx tsc --noEmit
 
+  # ==============================
   # Test Summary
+  # ==============================
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
@@ -156,11 +172,9 @@ jobs:
     if: always()
 
     steps:
-      - name: Check test results
+      - name: Create summary
         run: |
-          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All tests completed!" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
@@ -172,6 +186,9 @@ jobs:
              [ "${{ needs.e2e-tests.result }}" != "success" ] || \
              [ "${{ needs.lint-typecheck.result }}" != "success" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "❌ Some tests failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+            echo "❌ Some checks failed." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All checks passed successfully!" >> $GITHUB_STEP_SUMMARY
