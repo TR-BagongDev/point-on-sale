@@ -36,6 +36,7 @@ export interface StoreSettings {
   storeName: string;
   address?: string | null;
   phone?: string | null;
+  npwp?: string | null;
   taxRate?: number;
   currency?: string;
 }
@@ -70,6 +71,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     storeName: settings.storeName ?? "Warung Nasi Goreng",
     address: settings.address ?? "",
     phone: settings.phone ?? "",
+    npwp: settings.npwp ?? "",
     taxRate: settings.taxRate ?? 10,
     currency: settings.currency ?? "IDR",
   };
