@@ -24,6 +24,7 @@ interface StoreSettings {
   storeName: string;
   address: string;
   phone: string;
+  npwp: string;
   taxRate: number;
 }
 
@@ -34,6 +35,7 @@ interface ReceiptSettings {
   showTime: boolean;
   showCashier: boolean;
   showTax: boolean;
+  taxCompliant: boolean;
   paperWidth: number;
 }
 
@@ -42,6 +44,7 @@ export default function PengaturanPage() {
     storeName: "",
     address: "",
     phone: "",
+    npwp: "",
     taxRate: 10,
   });
 
@@ -52,6 +55,7 @@ export default function PengaturanPage() {
     showTime: true,
     showCashier: true,
     showTax: true,
+    taxCompliant: false,
     paperWidth: 80,
   });
 
@@ -72,6 +76,7 @@ export default function PengaturanPage() {
           storeName: data.storeName || "",
           address: data.address || "",
           phone: data.phone || "",
+          npwp: data.npwp || "",
           taxRate: data.taxRate || 10,
         });
       }
@@ -87,6 +92,7 @@ export default function PengaturanPage() {
             showTime: receiptData.showTime ?? true,
             showCashier: receiptData.showCashier ?? true,
             showTax: receiptData.showTax ?? true,
+            taxCompliant: receiptData.taxCompliant ?? false,
             paperWidth: receiptData.paperWidth || 80,
           });
         }
@@ -246,6 +252,20 @@ export default function PengaturanPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="npwp">NPWP</Label>
+                  <Input
+                    id="npwp"
+                    value={storeSettings.npwp}
+                    onChange={(e) =>
+                      setStoreSettings({ ...storeSettings, npwp: e.target.value })
+                    }
+                    placeholder="XX.XXX.XXX.X-XXX.XXX"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Nomor Pokok Wajib Pajak (format: XX.XXX.XXX.X-XXX.XXX)
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="taxRate">Tarif Pajak (%)</Label>
                   <Input
                     id="taxRate"
@@ -366,6 +386,20 @@ export default function PengaturanPage() {
                           className="h-4 w-4"
                         />
                         <span className="text-sm">Tampilkan Pajak</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.taxCompliant}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              taxCompliant: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Format Pajak (PPN)</span>
                       </label>
                     </div>
                   </div>

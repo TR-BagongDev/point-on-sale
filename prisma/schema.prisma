@@ -109,6 +109,7 @@ model Setting {
   storeName String
   address   String?
   phone     String?
+  npwp      String?
   taxRate   Float    @default(0)
   currency  String   @default("IDR")
   createdAt DateTime @default(now())
