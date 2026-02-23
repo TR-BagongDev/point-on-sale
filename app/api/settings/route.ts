@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
     if (guard) return guard;
 
     const body = await request.json();
-    const { storeName, address, phone, taxRate } = body;
+    const { storeName, address, phone, taxRate, npwp } = body;
 
     // Validate store name if provided
     if (storeName !== undefined && (typeof storeName !== "string" || storeName.trim() === "")) {
@@ -66,6 +66,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Validate NPWP if provided
+    if (npwp !== undefined && npwp !== null && typeof npwp !== "string") {
+      return NextResponse.json(
+        { error: "NPWP must be a string" },
+        { status: 400 }
+      );
+    }
+
     // Validate tax rate if provided
     if (taxRate !== undefined && taxRate !== null && taxRate !== "") {
       const parsedTaxRate = parseFloat(taxRate);
@@ -87,6 +95,7 @@ export async function PUT(request: NextRequest) {
           ...(storeName !== undefined && { storeName: storeName.trim() }),
           ...(address !== undefined && { address: address?.trim() || null }),
           ...(phone !== undefined && { phone: phone?.trim() || null }),
+          ...(npwp !== undefined && { npwp: npwp?.trim() || null }),
           ...(taxRate !== undefined && taxRate !== null && taxRate !== "" && { taxRate: parseFloat(taxRate) }),
         },
       });
@@ -96,6 +105,7 @@ export async function PUT(request: NextRequest) {
           storeName: storeName?.trim() || "",
           address: address?.trim() || null,
           phone: phone?.trim() || null,
+          npwp: npwp?.trim() || null,
           taxRate: (taxRate !== undefined && taxRate !== null && taxRate !== "") ? parseFloat(taxRate) : 0,
         },
       });
