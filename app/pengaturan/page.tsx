@@ -35,6 +35,7 @@ interface ReceiptSettings {
   showTime: boolean;
   showCashier: boolean;
   showTax: boolean;
+  taxCompliant: boolean;
   paperWidth: number;
 }
 
@@ -54,6 +55,7 @@ export default function PengaturanPage() {
     showTime: true,
     showCashier: true,
     showTax: true,
+    taxCompliant: false,
     paperWidth: 80,
   });
 
@@ -90,6 +92,7 @@ export default function PengaturanPage() {
             showTime: receiptData.showTime ?? true,
             showCashier: receiptData.showCashier ?? true,
             showTax: receiptData.showTax ?? true,
+            taxCompliant: receiptData.taxCompliant ?? false,
             paperWidth: receiptData.paperWidth || 80,
           });
         }
@@ -383,6 +386,20 @@ export default function PengaturanPage() {
                           className="h-4 w-4"
                         />
                         <span className="text-sm">Tampilkan Pajak</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={receiptSettings.taxCompliant}
+                          onChange={(e) =>
+                            setReceiptSettings({
+                              ...receiptSettings,
+                              taxCompliant: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm">Format Pajak (PPN)</span>
                       </label>
                     </div>
                   </div>
