@@ -74,6 +74,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Validate NPWP format if provided and not empty
+    if (npwp !== undefined && npwp !== null && npwp.trim() !== "") {
+      const npwpPattern = /^\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}$/;
+      if (!npwpPattern.test(npwp.trim())) {
+        return NextResponse.json(
+          { error: "NPWP format is invalid. Expected format: XX.XXX.XXX.X-XXX.XXX" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate tax rate if provided
     if (taxRate !== undefined && taxRate !== null && taxRate !== "") {
       const parsedTaxRate = parseFloat(taxRate);
