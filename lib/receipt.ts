@@ -28,6 +28,7 @@ export interface ReceiptTemplate {
   showTime: boolean;
   showCashier: boolean;
   showTax: boolean;
+  taxCompliant: boolean;
   paperWidth: number;
 }
 
@@ -59,6 +60,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
     showTime: template.showTime ?? true,
     showCashier: template.showCashier ?? true,
     showTax: template.showTax ?? true,
+    taxCompliant: template.taxCompliant ?? false,
     paperWidth: template.paperWidth ?? 80,
     header: template.header ?? "",
     footer: template.footer ?? "Terima kasih atas kunjungan Anda!",
