@@ -24,6 +24,7 @@ interface StoreSettings {
   storeName: string;
   address: string;
   phone: string;
+  npwp: string;
   taxRate: number;
 }
 
@@ -42,6 +43,7 @@ export default function PengaturanPage() {
     storeName: "",
     address: "",
     phone: "",
+    npwp: "",
     taxRate: 10,
   });
 
@@ -72,6 +74,7 @@ export default function PengaturanPage() {
           storeName: data.storeName || "",
           address: data.address || "",
           phone: data.phone || "",
+          npwp: data.npwp || "",
           taxRate: data.taxRate || 10,
         });
       }
@@ -244,6 +247,20 @@ export default function PengaturanPage() {
                     }
                     placeholder="Alamat lengkap toko"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="npwp">NPWP</Label>
+                  <Input
+                    id="npwp"
+                    value={storeSettings.npwp}
+                    onChange={(e) =>
+                      setStoreSettings({ ...storeSettings, npwp: e.target.value })
+                    }
+                    placeholder="XX.XXX.XXX.X-XXX.XXX"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Nomor Pokok Wajib Pajak (format: XX.XXX.XXX.X-XXX.XXX)
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="taxRate">Tarif Pajak (%)</Label>
