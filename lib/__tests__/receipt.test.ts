@@ -411,6 +411,204 @@ describe('generateReceiptHTML', () => {
     // Footer should include formatted date and time
     expect(html).toBeTruthy();
   });
+
+  // Indonesian Tax-Compliant Receipt Tests
+  describe('Indonesian Tax-Compliant Format', () => {
+    it('should show DPP and PPN when taxCompliant is true', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).toContain('DPP:');
+      expect(html).toContain('PPN (10%):');
+      expect(html).not.toContain('Subtotal:');
+      expect(html).not.toContain('Pajak (10%):');
+    });
+
+    it('should calculate DPP correctly without discount', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      // DPP = subtotal - discount = 35000 - 0 = 35000
+      expect(html).toContain('DPP:');
+      expect(html).toContain('35.000');
+    });
+
+    it('should calculate DPP correctly with discount', () => {
+      const orderWithDiscount: Order = {
+        ...mockOrder,
+        discount: 5000,
+        total: 33500,
+      };
+
+      const html = generateReceiptHTML({
+        order: orderWithDiscount,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      // DPP = subtotal - discount = 35000 - 5000 = 30000
+      expect(html).toContain('DPP:');
+      expect(html).toContain('30.000');
+    });
+
+    it('should not show discount separately in tax-compliant mode', () => {
+      const orderWithDiscount: Order = {
+        ...mockOrder,
+        discount: 5000,
+        total: 33500,
+      };
+
+      const html = generateReceiptHTML({
+        order: orderWithDiscount,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).not.toContain('Diskon:');
+    });
+
+    it('should show NPWP in header when taxCompliant and NPWP provided', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        settings: { npwp: '01.123.456.7-890.000' },
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).toContain('NPWP: 01.123.456.7-890.000');
+    });
+
+    it('should not show NPWP in header when taxCompliant is false', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        settings: { npwp: '01.123.456.7-890.000' },
+        template: { taxCompliant: false, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).not.toContain('NPWP:');
+    });
+
+    it('should not show NPWP in header when NPWP is empty', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        settings: { npwp: '' },
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).not.toContain('NPWP:');
+    });
+
+    it('should use custom tax rate in PPN display', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        settings: { taxRate: 11 },
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      expect(html).toContain('PPN (11%):');
+    });
+
+    it('should fall back to standard format when tax is 0 in tax-compliant mode', () => {
+      const orderWithoutTax: Order = {
+        ...mockOrder,
+        tax: 0,
+      };
+
+      const html = generateReceiptHTML({
+        order: orderWithoutTax,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      // Should show standard format when tax is 0
+      expect(html).toContain('Subtotal:');
+      expect(html).not.toContain('DPP:');
+      expect(html).not.toContain('PPN');
+    });
+
+    it('should fall back to standard format when showTax is false in tax-compliant mode', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: false, paperWidth: 80 },
+      });
+
+      // Should show standard format when showTax is false
+      expect(html).toContain('Subtotal:');
+      expect(html).not.toContain('DPP:');
+      expect(html).not.toContain('PPN');
+    });
+
+    it('should show complete tax-compliant receipt with all features', () => {
+      const orderWithDiscount: Order = {
+        ...mockOrder,
+        discount: 5000,
+        total: 33500,
+      };
+
+      const html = generateReceiptHTML({
+        order: orderWithDiscount,
+        settings: {
+          storeName: 'Warung Nasi Goreng',
+          address: 'Jl. Sudirman No. 123',
+          phone: '08123456789',
+          npwp: '01.123.456.7-890.000',
+          taxRate: 11,
+        },
+        template: {
+          taxCompliant: true,
+          showDate: true,
+          showTime: true,
+          showCashier: true,
+          showTax: true,
+          paperWidth: 80,
+        },
+      });
+
+      // Check header with NPWP
+      expect(html).toContain('NPWP: 01.123.456.7-890.000');
+
+      // Check tax-compliant format
+      expect(html).toContain('DPP:');
+      expect(html).toContain('30.000'); // 35000 - 5000
+      expect(html).toContain('PPN (11%):');
+      expect(html).toContain('3.500');
+
+      // Check totals
+      expect(html).toContain('TOTAL:');
+      expect(html).toContain('33.500');
+
+      // Verify no separate discount line
+      expect(html).not.toContain('Diskon:');
+    });
+
+    it('should handle edge case: zero discount in tax-compliant mode', () => {
+      const html = generateReceiptHTML({
+        order: mockOrder,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      // DPP should equal subtotal when discount is 0
+      expect(html).toContain('DPP:');
+      expect(html).toContain('35.000');
+    });
+
+    it('should handle edge case: discount greater than subtotal in tax-compliant mode', () => {
+      const orderWithLargeDiscount: Order = {
+        ...mockOrder,
+        discount: 40000,
+        subtotal: 35000,
+        total: 0,
+      };
+
+      const html = generateReceiptHTML({
+        order: orderWithLargeDiscount,
+        template: { taxCompliant: true, showDate: false, showTime: false, showCashier: false, showTax: true, paperWidth: 80 },
+      });
+
+      // DPP should be negative (edge case handling)
+      expect(html).toContain('DPP:');
+    });
+  });
 });
 
 describe('printReceipt', () => {
