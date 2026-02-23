@@ -231,6 +231,7 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
       <h1>${storeSettings.storeName}</h1>
       ${storeSettings.address ? `<p>${storeSettings.address}</p>` : ""}
       ${storeSettings.phone ? `<p>Tel: ${storeSettings.phone}</p>` : ""}
+      ${receiptTemplate.taxCompliant && storeSettings.npwp ? `<p>NPWP: ${storeSettings.npwp}</p>` : ""}
     </div>
   `;
 
@@ -299,28 +300,47 @@ export function generateReceiptHTML(options: ReceiptOptions): string {
   // Totals
   html += `
     <div class="totals">
+  `;
+
+  if (receiptTemplate.taxCompliant && receiptTemplate.showTax && order.tax > 0) {
+    // Indonesian tax-compliant format (DPP + PPN)
+    const dpp = order.subtotal - order.discount;
+    html += `
+      <div class="total-row">
+        <span>DPP:</span>
+        <span>${formatCurrency(dpp)}</span>
+      </div>
+      <div class="total-row">
+        <span>PPN (${storeSettings.taxRate}%):</span>
+        <span>${formatCurrency(order.tax)}</span>
+      </div>
+    `;
+  } else {
+    // Standard format
+    html += `
       <div class="total-row">
         <span>Subtotal:</span>
         <span>${formatCurrency(order.subtotal)}</span>
       </div>
-  `;
-
-  if (receiptTemplate.showTax && order.tax > 0) {
-    html += `
-      <div class="total-row">
-        <span>Pajak (${storeSettings.taxRate}%):</span>
-        <span>${formatCurrency(order.tax)}</span>
-      </div>
     `;
-  }
 
-  if (order.discount > 0) {
-    html += `
-      <div class="total-row">
-        <span>Diskon:</span>
-        <span>-${formatCurrency(order.discount)}</span>
-      </div>
-    `;
+    if (receiptTemplate.showTax && order.tax > 0) {
+      html += `
+        <div class="total-row">
+          <span>Pajak (${storeSettings.taxRate}%):</span>
+          <span>${formatCurrency(order.tax)}</span>
+        </div>
+      `;
+    }
+
+    if (order.discount > 0) {
+      html += `
+        <div class="total-row">
+          <span>Diskon:</span>
+          <span>-${formatCurrency(order.discount)}</span>
+        </div>
+      `;
+    }
   }
 
   html += `
