@@ -39,6 +39,12 @@ interface ReceiptSettings {
   paperWidth: number;
 }
 
+interface UserSession {
+  name: string;
+  email: string;
+  role: string;
+}
+
 export default function PengaturanPage() {
   const [storeSettings, setStoreSettings] = useState<StoreSettings>({
     storeName: "",
@@ -59,12 +65,16 @@ export default function PengaturanPage() {
     paperWidth: 80,
   });
 
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetchSettings();
+    fetchUserSession();
   }, []);
 
   const fetchSettings = async () => {
@@ -103,6 +113,21 @@ export default function PengaturanPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserSession = async () => {
+    try {
+      const res = await fetch("/api/auth/session");
+      if (!res.ok) throw new Error("Failed to fetch user session");
+      const data = await res.json();
+      setUserName(data.name || "");
+      setUserEmail(data.email || "");
+      setUserRole(data.role || "");
+    } catch (error) {
+      toast.error("Gagal memuat sesi pengguna", {
+        description: "Terjadi kesalahan saat mengambil data pengguna",
+      });
     }
   };
 
@@ -464,11 +489,11 @@ export default function PengaturanPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nama</Label>
-                    <Input id="name" defaultValue="Admin" />
+                    <Input id="name" value={userName} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue="admin@warung.com" />
+                    <Input id="email" type="email" value={userEmail} readOnly />
                   </div>
                 </div>
                 <div className="space-y-2">
