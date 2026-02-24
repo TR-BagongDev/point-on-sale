@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
 
 // Generate order number
 function generateOrderNumber(): string {
@@ -61,6 +62,13 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        shift: {
+          select: {
+            id: true,
+            status: true,
+            openedAt: true,
           },
         },
         items: {
@@ -264,6 +272,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Try to get the current session and find active shift
+    let shiftId: string | undefined;
+    try {
+      const session = await auth();
+      if (session?.user?.id) {
+        // Find the user's currently open shift
+        const activeShift = await prisma.shift.findFirst({
+          where: {
+            userId: session.user.id,
+            status: "OPEN",
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (activeShift) {
+          shiftId = activeShift.id;
+        }
+      }
+    } catch (error) {
+      // If auth fails, continue without shift linking
+      // This maintains backward compatibility
+    }
+
     const orderNumber = generateOrderNumber();
 
     const order = await prisma.order.create({
@@ -277,6 +310,7 @@ export async function POST(request: NextRequest) {
         paymentMethod: paymentMethod ?? "CASH",
         status: "PENDING",
         notes: notes?.trim() || null,
+        shiftId: shiftId,
         items: {
           create: items.map(
             (item: { menuId: string; quantity: number; price: number; notes?: string }) => ({
@@ -365,6 +399,20 @@ export async function PUT(request: NextRequest) {
         notes: notes?.trim() || null,
       },
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        shift: {
+          select: {
+            id: true,
+            status: true,
+            openedAt: true,
+          },
+        },
         items: {
           include: {
             menu: true,
