@@ -26,6 +26,7 @@ import { useOfflineStore } from "@/store/offline-store";
 import { useSyncQueueStore } from "@/store/sync-queue";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
 import { SyncStatusIndicator } from "@/components/offline/SyncStatusIndicator";
+import { ShiftStatusIndicator } from "@/components/shift/ShiftStatusIndicator";
 import {
   Plus,
   Minus,
@@ -66,6 +67,16 @@ interface Category {
   icon: string | null;
 }
 
+interface Shift {
+  id: string;
+  status: string;
+  openedAt: string;
+  user: {
+    id: string;
+    name: string;
+  };
+}
+
 const TAX_RATE = 10; // 10% Pajak
 
 export function KasirClient() {
@@ -79,6 +90,10 @@ export function KasirClient() {
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [currentShift, setCurrentShift] = useState<Shift | null>(null);
+  const [shiftLoading, setShiftLoading] = useState(true);
+  const [showOpenShiftDialog, setShowOpenShiftDialog] = useState(false);
+  const [startingCash, setStartingCash] = useState("");
 
   // Offline and sync state
   const isOnline = useOfflineStore((state) => state.isOnline);
@@ -118,9 +133,76 @@ export function KasirClient() {
     }
   }
 
+  async function fetchCurrentShift() {
+    try {
+      setShiftLoading(true);
+      const res = await fetch("/api/shift?status=OPEN");
+      if (!res.ok) {
+        if (res.status === 401) {
+          // Unauthorized - user not logged in
+          setCurrentShift(null);
+          return;
+        }
+        throw new Error("Failed to fetch shift");
+      }
+      const data = await res.json();
+      // Get the first open shift for the current user
+      const userShift = Array.isArray(data) ? data[0] : null;
+      setCurrentShift(userShift);
+    } catch (error) {
+      // If there's an error, assume no shift
+      setCurrentShift(null);
+    } finally {
+      setShiftLoading(false);
+    }
+  }
+
+  async function handleOpenShift() {
+    if (!startingCash) {
+      toast.error("Modal awal harus diisi", {
+        description: "Masukkan jumlah modal awal",
+      });
+      return;
+    }
+
+    const cash = parseFloat(startingCash);
+    if (isNaN(cash) || cash < 0) {
+      toast.error("Modal awal tidak valid", {
+        description: "Masukkan jumlah yang valid",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/shift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startingCash: cash }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to open shift");
+      }
+
+      const shift = await res.json();
+      setCurrentShift(shift);
+      setShowOpenShiftDialog(false);
+      setStartingCash("");
+      toast.success("Shift berhasil dibuka!", {
+        description: `Shift dimulai dengan modal ${formatCurrency(cash)}`,
+      });
+    } catch (error: any) {
+      toast.error("Gagal membuka shift", {
+        description: error.message || "Terjadi kesalahan saat membuka shift",
+      });
+    }
+  }
+
   useEffect(() => {
     fetchMenus();
     fetchCategories();
+    fetchCurrentShift();
 
     // Initialize offline listeners
     useOfflineStore.getState().initializeOnlineListeners();
@@ -242,6 +324,13 @@ export function KasirClient() {
     return "online";
   };
 
+  // Determine shift status for indicator
+  const getShiftStatus = (): "open" | "closed" | "none" => {
+    if (shiftLoading) return "none";
+    if (currentShift?.status === "OPEN") return "open";
+    return "none";
+  };
+
   return (
     <TooltipProvider>
       <OfflineBanner />
@@ -325,6 +414,10 @@ export function KasirClient() {
               Keranjang
             </CardTitle>
             <div className="flex items-center gap-2">
+              <ShiftStatusIndicator
+                status={getShiftStatus()}
+                shiftName={currentShift ? `Shift: ${currentShift.user.name}` : undefined}
+              />
               <SyncStatusIndicator status={getSyncStatus()} />
               {items.length > 0 && (
                 <Badge variant="secondary">{getItemCount()} item</Badge>
@@ -335,6 +428,14 @@ export function KasirClient() {
             <p className="text-xs text-muted-foreground mt-2">
               {pendingCount} pesanan menunggu sinkronisasi
             </p>
+          )}
+          {!shiftLoading && !currentShift && (
+            <Button
+              className="w-full mt-2 bg-yellow-500 hover:bg-yellow-600 text-white"
+              onClick={() => setShowOpenShiftDialog(true)}
+            >
+              Buka Shift
+            </Button>
           )}
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-0">
@@ -601,6 +702,48 @@ export function KasirClient() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCheckout(false)}>
               Batal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Open Shift Dialog */}
+      <Dialog open={showOpenShiftDialog} onOpenChange={setShowOpenShiftDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Buka Shift Baru</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Modal Awal
+              </label>
+              <Input
+                type="number"
+                placeholder="Masukkan modal awal"
+                value={startingCash}
+                onChange={(e) => setStartingCash(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Masukkan jumlah uang tunai yang ada di kasir saat memulai shift
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowOpenShiftDialog(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleOpenShift}
+              disabled={!startingCash}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              Buka Shift
             </Button>
           </DialogFooter>
         </DialogContent>
