@@ -247,7 +247,7 @@ class ServiceWorkerManager {
 
     try {
       const registrations = await navigator.serviceWorker.getRegistrations()
-      return registrations
+      return [...registrations]
     } catch (error) {
       logError(error, "ServiceWorkerGetRegistrations")
       return []

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loading } from "@/components/ui/loading";
@@ -78,7 +77,6 @@ export default function UsersPage() {
   };
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -161,6 +159,5 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   );
 }

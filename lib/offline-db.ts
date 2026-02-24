@@ -41,7 +41,7 @@ interface OfflineDB extends DBSchema {
     value: OfflineMenu;
     indexes: {
       'by-categoryId': string;
-      'by-availability': boolean;
+      'by-availability': any;
       'by-version': number;
     };
   };
@@ -177,7 +177,7 @@ export async function get<T>(
 ): Promise<T | undefined> {
   try {
     if (!db) return undefined;
-    return await db.get(storeName, key);
+    return (await db.get(storeName, key)) as T | undefined;
   } catch (error) {
     console.error(`[OfflineDB] Error getting item from ${storeName}:`, error);
     throw error;
@@ -190,7 +190,7 @@ export async function get<T>(
 export async function getAll<T>(storeName: OfflineStoreName): Promise<T[]> {
   try {
     if (!db) return [];
-    return await db.getAll(storeName);
+    return (await db.getAll(storeName)) as T[];
   } catch (error) {
     console.error(`[OfflineDB] Error getting all items from ${storeName}:`, error);
     throw error;
@@ -207,6 +207,7 @@ export async function getAllFromIndex<T>(
 ): Promise<T[]> {
   try {
     if (!db) return [];
+    // @ts-expect-error - idb library has strict type inference issues with mixed index types
     return await db.getAllFromIndex(storeName, indexName, indexValue);
   } catch (error) {
     console.error(
@@ -226,6 +227,7 @@ export async function put<T>(
 ): Promise<string> {
   try {
     if (!db) throw new Error('IndexedDB not available');
+    // @ts-expect-error - idb library has strict type inference issues with generic value types
     const key = await db.put(storeName, value);
     return key as string;
   } catch (error) {
@@ -316,7 +318,7 @@ export const orderItemsDB = {
 export const menusDB = {
   add: async (menu: OfflineMenu) => put('menus', menu),
   addMany: async (menus: OfflineMenu[]) => {
-    const tx = db.transaction('menus', 'readwrite');
+    const tx = db!.transaction('menus', 'readwrite');
     await Promise.all([
       ...menus.map((menu) => tx.store.put(menu)),
       tx.done,
@@ -324,7 +326,7 @@ export const menusDB = {
   },
   cacheMenus: async (menus: OfflineMenu[]) => {
     try {
-      const tx = db.transaction('menus', 'readwrite');
+      const tx = db!.transaction('menus', 'readwrite');
       await Promise.all([
         ...menus.map((menu) => tx.store.put(menu)),
         tx.done,
@@ -368,7 +370,7 @@ export const menusDB = {
 export const categoriesDB = {
   add: async (category: OfflineCategory) => put('categories', category),
   addMany: async (categories: OfflineCategory[]) => {
-    const tx = db.transaction('categories', 'readwrite');
+    const tx = db!.transaction('categories', 'readwrite');
     await Promise.all([
       ...categories.map((category) => tx.store.put(category)),
       tx.done,

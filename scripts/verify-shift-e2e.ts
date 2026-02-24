@@ -346,7 +346,7 @@ async function verifyStep4_CloseShift(shiftId: string) {
     });
 
     console.log(`   ✅ Shift closed: ${closedShift.id}`);
-    console.log(`   📅 Closed At: ${closedShift.closedAt.toISOString()}`);
+    console.log(`   📅 Closed At: ${closedShift.closedAt?.toISOString() ?? 'N/A'}`);
     console.log(`   📊 Status: ${closedShift.status}`);
 
     results.push({

@@ -84,8 +84,8 @@ export async function cleanupTestDatabase() {
   await prisma.order.deleteMany({});
   await prisma.menu.deleteMany({});
   await prisma.category.deleteMany({});
-  await prisma.session.deleteMany({});
-  await prisma.account.deleteMany({});
+  // await prisma.session.deleteMany({}); // Session is managed by NextAuth, not Prisma
+  // await prisma.account.deleteMany({}); // Account is managed by NextAuth, not Prisma
   await prisma.user.deleteMany({});
   await prisma.setting.deleteMany({});
   await prisma.receiptTemplate.deleteMany({});

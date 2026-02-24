@@ -1,11 +1,11 @@
 import { auth } from "@/auth";
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "@/components/layout/Sidebar";
 
-interface DashboardLayoutProps {
+interface PesananLayoutProps {
   children: React.ReactNode;
 }
 
-export async function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function PesananLayout({ children }: PesananLayoutProps) {
   const session = await auth();
 
   return (

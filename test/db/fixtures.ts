@@ -30,6 +30,7 @@ const globalForFixturePrisma = globalThis as unknown as {
 function getFixturePrisma(): PrismaClient {
   if (!globalForFixturePrisma.fixturePrisma) {
     globalForFixturePrisma.fixturePrisma = new PrismaClient({
+      // @ts-expect-error - Prisma datasource type compatibility issue
       datasources: {
         db: {
           url: process.env.TEST_DATABASE_URL || 'file:./test.db',
@@ -75,7 +76,7 @@ export async function seedBasicFixtures() {
   });
 
   // Create settings
-  await prisma.settings.upsert({
+  await prisma.setting.upsert({
     where: { id: mockSettings.id },
     update: {},
     create: mockSettings,
@@ -174,6 +175,7 @@ export async function seedOrderFixtures() {
   const order1 = await prisma.order.create({
     data: {
       id: 'cm2ord111pending',
+      orderNumber: 'ORD-001',
       subtotal: 30000,
       tax: 3000,
       discount: 0,
@@ -206,6 +208,7 @@ export async function seedOrderFixtures() {
   const order2 = await prisma.order.create({
     data: {
       id: 'cm2ord222completed',
+      orderNumber: 'ORD-002',
       subtotal: 40000,
       tax: 4000,
       discount: 5000,
@@ -231,6 +234,7 @@ export async function seedOrderFixtures() {
   const order3 = await prisma.order.create({
     data: {
       id: 'cm2ord333processing',
+      orderNumber: 'ORD-003',
       subtotal: 50000,
       tax: 5000,
       discount: 0,
@@ -277,10 +281,10 @@ export async function resetFixtures() {
   await prisma.order.deleteMany({});
   await prisma.menu.deleteMany({});
   await prisma.category.deleteMany({});
-  await prisma.session.deleteMany({});
-  await prisma.account.deleteMany({});
+  // await prisma.session.deleteMany({}); // Session is managed by NextAuth, not Prisma
+  // await prisma.account.deleteMany({}); // Account is managed by NextAuth, not Prisma
   await prisma.user.deleteMany({});
-  await prisma.settings.deleteMany({});
+  await prisma.setting.deleteMany({});
   await prisma.receiptTemplate.deleteMany({});
   await prisma.activityLog.deleteMany({});
 }
@@ -381,6 +385,7 @@ export async function createTestOrder(userId: string, overrides: {
 
   return prisma.order.create({
     data: {
+      orderNumber: `ORD-${Date.now()}`,
       subtotal: overrides.subtotal || 10000,
       tax: overrides.tax || 1000,
       discount: overrides.discount || 0,
