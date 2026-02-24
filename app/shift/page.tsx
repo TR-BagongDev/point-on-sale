@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
-import { Clock, UserCheck, UserX, DollarSign, AlertCircle } from "lucide-react";
+import { Clock, UserCheck, UserX, DollarSign, AlertCircle, Plus } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { ShiftOpenDialog } from "./components/ShiftOpenDialog";
 
 interface ShiftOrder {
   id: string;
@@ -44,6 +46,7 @@ interface Shift {
 export default function ShiftPage() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
     fetchShifts();
@@ -120,11 +123,17 @@ export default function ShiftPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manajemen Shift</h1>
-          <p className="text-muted-foreground">
-            Kelola shift kasir dan lacak transaksi
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Manajemen Shift</h1>
+            <p className="text-muted-foreground">
+              Kelola shift kasir dan lacak transaksi
+            </p>
+          </div>
+          <Button onClick={() => setOpenDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Buka Shift
+          </Button>
         </div>
 
         {/* Shifts Table */}
@@ -231,6 +240,12 @@ export default function ShiftPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ShiftOpenDialog
+        open={openDialog}
+        onOpenChange={setOpenDialog}
+        onShiftOpened={fetchShifts}
+      />
     </DashboardLayout>
   );
 }
