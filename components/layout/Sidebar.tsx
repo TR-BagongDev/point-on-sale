@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChefHat,
+  Clock,
 } from "lucide-react";
 
 const menuItems = [
@@ -29,6 +30,11 @@ const menuItems = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Shift",
+    href: "/shift",
+    icon: Clock,
   },
   {
     title: "Laporan",
