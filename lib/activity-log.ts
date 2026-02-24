@@ -175,4 +175,124 @@ export async function logPasswordReset(params: {
   });
 }
 
+/**
+ * Records shift opened activity
+ */
+export async function logShiftOpened(params: {
+  userId: string;
+  shiftId: string;
+  startingCash?: number;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  return logActivity({
+    userId: params.userId,
+    action: "SHIFT_OPENED",
+    targetUserId: params.userId,
+    details: {
+      shiftId: params.shiftId,
+      startingCash: params.startingCash,
+    },
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+  });
+}
+
+/**
+ * Records shift closed activity
+ */
+export async function logShiftClosed(params: {
+  userId: string;
+  shiftId: string;
+  endingCash?: number;
+  expectedCash?: number;
+  discrepancy?: number;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  return logActivity({
+    userId: params.userId,
+    action: "SHIFT_CLOSED",
+    targetUserId: params.userId,
+    details: {
+      shiftId: params.shiftId,
+      endingCash: params.endingCash,
+      expectedCash: params.expectedCash,
+      discrepancy: params.discrepancy,
+    },
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+  });
+}
+
+/**
+ * Records shift handover activity
+ */
+export async function logShiftHandover(params: {
+  userId: string;
+  targetUserId: string;
+  shiftId: string;
+  handoverCash?: number;
+  notes?: string;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  return logActivity({
+    userId: params.userId,
+    action: "SHIFT_HANDOVER",
+    targetUserId: params.targetUserId,
+    details: {
+      shiftId: params.shiftId,
+      handoverCash: params.handoverCash,
+      notes: params.notes,
+    },
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+  });
+}
+
+/**
+ * Records shift cash count updated activity
+ */
+export async function logShiftCashCountUpdated(params: {
+  userId: string;
+  shiftId: string;
+  cashCount?: number;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  return logActivity({
+    userId: params.userId,
+    action: "SHIFT_CASH_COUNT_UPDATED",
+    targetUserId: params.userId,
+    details: {
+      shiftId: params.shiftId,
+      cashCount: params.cashCount,
+    },
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+  });
+}
+
+/**
+ * Records shift report viewed activity
+ */
+export async function logShiftReportViewed(params: {
+  userId: string;
+  shiftId: string;
+  ipAddress?: string;
+  userAgent?: string;
+}) {
+  return logActivity({
+    userId: params.userId,
+    action: "SHIFT_REPORT_VIEWED",
+    targetUserId: params.userId,
+    details: {
+      shiftId: params.shiftId,
+    },
+    ipAddress: params.ipAddress,
+    userAgent: params.userAgent,
+  });
+}
+
 export default logActivity;

@@ -21,6 +21,7 @@ model User {
   activityLogs  ActivityLog[]       @relation("UserActivityLog")
   orders        Order[]
   modifications OrderModification[]
+  shifts        Shift[]
 }
 
 model Category {
@@ -60,6 +61,8 @@ model Order {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   syncedAt      DateTime?
+  shiftId       String?
+  shift         Shift?              @relation(fields: [shiftId], references: [id])
   user          User                @relation(fields: [userId], references: [id])
   items         OrderItem[]
   modifications OrderModification[]
@@ -74,6 +77,23 @@ model OrderItem {
   notes    String?
   menu     Menu    @relation(fields: [menuId], references: [id])
   order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Shift {
+  id           String    @id @default(cuid())
+  userId       String
+  status       String    @default("OPEN")
+  startingCash Float
+  endingCash   Float?
+  expectedCash Float?
+  discrepancy  Float?
+  notes        String?
+  openedAt     DateTime  @default(now())
+  closedAt     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  orders       Order[]
+  user         User      @relation(fields: [userId], references: [id])
 }
 
 model OrderModification {
@@ -109,11 +129,11 @@ model Setting {
   storeName String
   address   String?
   phone     String?
-  npwp      String?
   taxRate   Float    @default(0)
   currency  String   @default("IDR")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  npwp      String?
 }
 
 model ActivityLog {

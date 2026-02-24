@@ -2,20 +2,22 @@
 > point-on-sale@1.0.0 dev
 > next dev
 
-⚠ Port 3000 is in use by process 4120, using available port 3002 instead.
+⚠ Port 3000 is in use by process 13884, using available port 3001 instead.
+PWA not installed, running without PWA support
 ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
- We detected multiple lockfiles and selected the directory of C:\Users\TRUST\Documents\point-on-sale\package-lock.json as the root directory.
+ We detected multiple lockfiles and selected the directory of D:\VSCode\point-on-sale\package-lock.json as the root directory.
  To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
    See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
  Detected additional lockfiles: 
-   * C:\Users\TRUST\Documents\point-on-sale\.auto-claude\worktrees\tasks\005-typescript-strict-mode-error-handling\package-lock.json
+   * D:\VSCode\point-on-sale\.auto-claude\worktrees\tasks\008-shift-management-system\package-lock.json
 
 ▲ Next.js 16.1.6 (Turbopack)
-- Local:         http://localhost:3002
-- Network:       http://192.168.224.1:3002
-- Environments: .env.local, .env
+- Local:         http://localhost:3001
+- Network:       http://192.168.50.62:3001
+- Environments: .env
 
 ✓ Starting...
-⨯ Unable to acquire lock at C:\Users\TRUST\Documents\point-on-sale\.auto-claude\worktrees\tasks\005-typescript-strict-mode-error-handling\.next\dev\lock, is another instance of next dev running?
+⨯ Unable to acquire lock at D:\VSCode\point-on-sale\.auto-claude\worktrees\tasks\008-shift-management-system\.next\dev\lock, is another instance of next dev running?
   Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+PWA not installed, running without PWA support
 [?25h
