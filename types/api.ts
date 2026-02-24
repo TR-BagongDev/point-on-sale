@@ -148,6 +148,43 @@ export interface OrderModification {
 export interface OrderModificationListResponse extends Array<OrderModification> {}
 
 // ============================================================================
+// Shift Types
+// ============================================================================
+
+export interface Shift {
+  id: string;
+  userId: string;
+  status: string;
+  startingCash: number;
+  endingCash: number | null;
+  expectedCash: number | null;
+  discrepancy: number | null;
+  notes: string | null;
+  openedAt: Date;
+  closedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShiftUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ShiftWithUser extends Shift {
+  user: ShiftUser;
+}
+
+export interface ShiftWithOrders extends ShiftWithUser {
+  orders: Order[];
+}
+
+export interface ShiftListResponse extends Array<ShiftWithUser> {}
+
+export interface ShiftResponse extends ShiftWithUser {}
+
+// ============================================================================
 // Settings Types
 // ============================================================================
 
