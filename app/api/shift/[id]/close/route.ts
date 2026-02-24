@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { checkUnresolvedOrders } from "@/lib/shift-utils";
 
 async function requireAuth() {
   const session = await auth();
@@ -78,6 +79,21 @@ export async function POST(
     if (existingShift.status === "CLOSED") {
       return NextResponse.json(
         { error: "Shift is already closed" },
+        { status: 400 },
+      );
+    }
+
+    // Check for unresolved orders (not COMPLETED status)
+    const unresolvedOrders = await checkUnresolvedOrders(id);
+    if (unresolvedOrders.length > 0) {
+      const orderList = unresolvedOrders
+        .map((o) => `${o.orderNumber} (${o.status})`)
+        .join(", ");
+      return NextResponse.json(
+        {
+          error: "Cannot close shift with unresolved orders",
+          details: `Orders: ${orderList}`,
+        },
         { status: 400 },
       );
     }
