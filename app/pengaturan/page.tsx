@@ -71,6 +71,11 @@ export default function PengaturanPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
     fetchSettings();
@@ -124,6 +129,8 @@ export default function PengaturanPage() {
       setUserName(data.name || "");
       setUserEmail(data.email || "");
       setUserRole(data.role || "");
+      setEditName(data.name || "");
+      setEditEmail(data.email || "");
     } catch (error) {
       toast.error("Gagal memuat sesi pengguna", {
         description: "Terjadi kesalahan saat mengambil data pengguna",
@@ -183,6 +190,100 @@ export default function PengaturanPage() {
     } catch (error) {
       toast.error("Gagal menyimpan template struk", {
         description: error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan template",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateAccount = async () => {
+    // Validation: name is required
+    if (!editName.trim()) {
+      toast.error("Nama tidak boleh kosong", {
+        description: "Silakan masukkan nama Anda",
+      });
+      return;
+    }
+
+    // Validation: email is required and valid format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!editEmail.trim()) {
+      toast.error("Email tidak boleh kosong", {
+        description: "Silakan masukkan email Anda",
+      });
+      return;
+    }
+    if (!emailRegex.test(editEmail)) {
+      toast.error("Format email tidak valid", {
+        description: "Silakan masukkan alamat email yang valid",
+      });
+      return;
+    }
+
+    // Validation: if updating password, all password fields must be filled and match
+    if (newPassword || confirmPassword) {
+      if (!currentPassword) {
+        toast.error("Password saat ini diperlukan", {
+          description: "Silakan masukkan password saat ini untuk mengubah password",
+        });
+        return;
+      }
+      if (newPassword.length < 6) {
+        toast.error("Password baru terlalu pendek", {
+          description: "Password baru harus minimal 6 karakter",
+        });
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        toast.error("Konfirmasi password tidak cocok", {
+          description: "Password baru dan konfirmasi password harus sama",
+        });
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const updateData: { name: string; email: string; currentPassword?: string; newPassword?: string } = {
+        name: editName.trim(),
+        email: editEmail.trim(),
+      };
+
+      // Only include password fields if new password is provided
+      if (newPassword && currentPassword) {
+        updateData.currentPassword = currentPassword;
+        updateData.newPassword = newPassword;
+      }
+
+      const res = await fetch("/api/user/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal mengupdate akun");
+      }
+
+      // Update local state with new values
+      setUserName(editName.trim());
+      setUserEmail(editEmail.trim());
+
+      // Clear password fields
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+
+      toast.success("Akun berhasil diperbarui", {
+        description: "Perubahan telah diterapkan",
+      });
+    } catch (error) {
+      toast.error("Gagal mengupdate akun", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mengupdate akun",
       });
     } finally {
       setSaving(false);
@@ -489,30 +590,66 @@ export default function PengaturanPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nama</Label>
-                    <Input id="name" value={userName} readOnly />
+                    <Input
+                      id="name"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Nama Anda"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={userEmail} readOnly />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="email@example.com"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Password Saat Ini</Label>
-                  <Input id="currentPassword" type="password" />
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Masukkan password saat ini untuk mengubah password"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Diperlukan hanya jika ingin mengubah password
+                  </p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">Password Baru</Label>
-                    <Input id="newPassword" type="password" />
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Password baru (minimal 6 karakter)"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-                    <Input id="confirmPassword" type="password" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Ulangi password baru"
+                    />
                   </div>
                 </div>
-                <Button className="bg-primary-600 hover:bg-primary-700">
+                <Button
+                  onClick={handleUpdateAccount}
+                  disabled={saving}
+                  className="bg-primary-600 hover:bg-primary-700"
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Update Akun
+                  {saving ? "Menyimpan..." : "Update Akun"}
                 </Button>
               </CardContent>
             </Card>
