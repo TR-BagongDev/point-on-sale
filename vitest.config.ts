@@ -25,7 +25,7 @@ export default defineConfig({
       // Configuration for reports
       reportsDirectory: './coverage',
       // Include all source files in coverage
-      all: true,
+      // all: true, // Not supported in current vitest version
     },
     include: ['**/__tests__/**/*.{test,spec}.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
     exclude: [

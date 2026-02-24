@@ -311,7 +311,7 @@ export default function PengaturanPage() {
                       onChange={(e) =>
                         setReceiptSettings({ ...receiptSettings, header: e.target.value })
                       }
-                      placeholder="WARUNG NASI GORENG&#10;Jl. Contoh No. 123&#10;Telp: 081234567890"
+                      placeholder="WARUNG NASI GORENG - Jl. Contoh No. 123 - Telp: 081234567890"
                     />
                   </div>
                   <div className="space-y-2">
@@ -497,6 +497,5 @@ export default function PengaturanPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
   );
 }

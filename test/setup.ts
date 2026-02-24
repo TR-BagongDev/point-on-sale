@@ -11,7 +11,7 @@ afterEach(() => {
 beforeAll(() => {
   // Set test environment variables
   if (typeof process !== 'undefined') {
-    process.env.NODE_ENV = 'test';
+    // process.env.NODE_ENV = 'test'; // NODE_ENV is read-only in newer Node versions
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db';
   }
 });

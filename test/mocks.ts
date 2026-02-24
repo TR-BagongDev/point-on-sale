@@ -198,7 +198,7 @@ export const mockOrderItem2 = {
   menuId: mockMenu3.id,
   quantity: 1,
   price: 5000,
-  notes: undefined,
+  notes: null,
 } as OrderItem;
 
 export const mockOrderItem3 = {
@@ -216,7 +216,7 @@ export const mockOrderItem4 = {
   menuId: mockMenu2.id,
   quantity: 2,
   price: 22000,
-  notes: undefined,
+  notes: null,
 } as OrderItem;
 
 // ============================================================================
@@ -230,7 +230,7 @@ export const mockSettings = {
   phone: '08123456789',
   taxRate: 10,
   currency: 'IDR',
-  locale: 'id-ID',
+  npwp: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
 } as Setting;
@@ -241,6 +241,7 @@ export const mockSettings = {
 
 export const mockReceiptTemplate = {
   id: 'cm2rcpt111default',
+  name: 'Default Template',
   header: 'WARUNG NASI GORENG\\nTerima kasih atas kunjungan Anda',
   footer: 'Barang yang sudah dibeli tidak dapat ditukar\\nSelamat menikmati!',
   showDate: true,
