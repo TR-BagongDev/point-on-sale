@@ -1,5 +1,5 @@
 # Auto Claude data directory
-.auto-claude/
+.auto-claude
 .kilocode/
 .kilocodemodes
 
