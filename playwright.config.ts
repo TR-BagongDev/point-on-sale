@@ -17,6 +17,9 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
 
+  // Global setup to run before all tests
+  globalSetup: path.resolve(__dirname, 'e2e/global-setup.ts'),
+
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

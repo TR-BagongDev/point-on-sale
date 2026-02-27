@@ -1,4 +1,35 @@
 {
-  "cookies": [],
+  "cookies": [
+    {
+      "name": "authjs.csrf-token",
+      "value": "8cae13667b3785b68d50999c5ccb7e052661e058d88309824e6e722e83ad0618%7C251920f4007ff6716a4e2f3da290224847d94fa50af95717b2dbae31a9ea1f45",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "authjs.callback-url",
+      "value": "http%3A%2F%2Flocalhost%3A3000%2Fkasir",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "authjs.session-token",
+      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoidWx2eXlvZHFXNS00T1lEZVlBb056UGNLTlY5X0dGSlItNURTNFZuRjVqaUlBbWhZRndjYkVCRTdWc2wyQ3BPb3JvSlJST3VYa1k1Y3JaaUJDb1BTWFEifQ..zraL6BM02UpcuYyQiqZGvw.wHtJLEZs49i_MsjXSqELk76J848Ff8WQQGIJYue9PxsVYm25ZFN7DEQriMJODSsqjLAjI1t14Z-JQgSAA9oqtc8RGlgwkBGYoiPPy7sPVix0jGq-2mOls6cMxWm9bTp9Z2KKMcJUv4khZlg5vWh85zk77iAcpfg1iTghHcBh7BcR0nOtdDYn35HV77VMDDbLNkHqRROG91Qs8F9p39UIaeRqdOYEUG_9aXgn9JMqjzyAT0lYBuO162QIes94FcvTJrvfG2P9I3sQr07sXEMExQ.YNSy0KPrcXORQvoKnRIf_HZyaQPD-NzvtVSvHUrsiRo",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1774612519.754885,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
   "origins": []
 }
