@@ -75,7 +75,6 @@
     "eslint": "^10.0.2",
     "eslint-config-next": "^0.2.4",
     "jsdom": "^28.1.0",
-    "next-pwa": "^0.0.1",
     "prisma": "^7.4.1",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",

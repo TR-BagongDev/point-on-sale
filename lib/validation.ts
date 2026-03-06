@@ -94,7 +94,7 @@ export const createMenuSchema = z.object({
   description: z.string().max(500, "Description is too long").optional(),
   price: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Price must be a number" })
+    .int("Price must be a whole number (Rupiah)")
     .positive("Price must be positive"),
   image: z.string().url("Invalid image URL").optional(),
   categoryId: idSchema,
@@ -107,7 +107,7 @@ export const updateMenuSchema = z.object({
   description: z.string().max(500, "Description is too long").optional(),
   price: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Price must be a number" })
+    .int("Price must be a whole number (Rupiah)")
     .positive("Price must be positive")
     .optional(),
   image: z.string().url("Invalid image URL").optional(),
@@ -132,7 +132,7 @@ export const orderItemSchema = z.object({
     .positive("Quantity must be positive"),
   price: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Price must be a number" })
+    .int("Price must be a whole number (Rupiah)")
     .nonnegative("Price cannot be negative"),
   notes: z.string().max(200, "Notes are too long").optional(),
 });
@@ -148,23 +148,23 @@ export const createOrderSchema = z.object({
     .refine((items) => items.length > 0, "Items array cannot be empty"),
   subtotal: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Subtotal must be a number" })
+    .int("Subtotal must be a whole number (Rupiah)")
     .nonnegative("Subtotal cannot be negative"),
   tax: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Tax must be a number" })
+    .int("Tax must be a whole number (Rupiah)")
     .nonnegative("Tax cannot be negative")
     .optional()
     .default(0),
   discount: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Discount must be a number" })
+    .int("Discount must be a whole number (Rupiah)")
     .nonnegative("Discount cannot be negative")
     .optional()
     .default(0),
   total: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Total must be a number" })
+    .int("Total must be a whole number (Rupiah)")
     .nonnegative("Total cannot be negative"),
   paymentMethod: PaymentMethodEnum.optional().default("CASH"),
   notes: z.string().max(500, "Notes are too long").optional(),
@@ -201,7 +201,6 @@ export const updateSettingsSchema = z.object({
   phone: z.string().max(20, "Phone number is too long").optional(),
   taxRate: z.coerce
     .number()
-    .refine((val) => !isNaN(val), { message: "Tax rate must be a number" })
     .nonnegative("Tax rate cannot be negative")
     .max(100, "Tax rate cannot exceed 100%"),
 });

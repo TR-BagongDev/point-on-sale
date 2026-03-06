@@ -32,9 +32,9 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface UserListResponse extends Array<User> {}
+export interface UserListResponse extends Array<User> { }
 
-export interface UserResponse extends User {}
+export interface UserResponse extends User { }
 
 // ============================================================================
 // Category Types
@@ -52,9 +52,9 @@ export interface CategoryWithMenus extends Category {
   menus: Menu[];
 }
 
-export interface CategoryListResponse extends Array<CategoryWithMenus> {}
+export interface CategoryListResponse extends Array<CategoryWithMenus> { }
 
-export interface CategoryResponse extends CategoryWithMenus {}
+export interface CategoryResponse extends CategoryWithMenus { }
 
 // ============================================================================
 // Menu Types
@@ -76,9 +76,9 @@ export interface MenuWithCategory extends Menu {
   category: Category;
 }
 
-export interface MenuListResponse extends Array<MenuWithCategory> {}
+export interface MenuListResponse extends Array<MenuWithCategory> { }
 
-export interface MenuResponse extends MenuWithCategory {}
+export interface MenuResponse extends MenuWithCategory { }
 
 // ============================================================================
 // Order Item Types
@@ -115,8 +115,8 @@ export interface Order {
   tax: number;
   discount: number;
   total: number;
-  paymentMethod: string;
-  status: string;
+  paymentMethod: "CASH" | "CARD" | "QRIS" | "TRANSFER";
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -127,9 +127,9 @@ export interface OrderWithItems extends Order {
   items: OrderItemWithMenu[];
 }
 
-export interface OrderListResponse extends Array<OrderWithItems> {}
+export interface OrderListResponse extends Array<OrderWithItems> { }
 
-export interface OrderResponse extends OrderWithItems {}
+export interface OrderResponse extends OrderWithItems { }
 
 // ============================================================================
 // Order Modification Types
@@ -145,7 +145,7 @@ export interface OrderModification {
   createdAt: Date;
 }
 
-export interface OrderModificationListResponse extends Array<OrderModification> {}
+export interface OrderModificationListResponse extends Array<OrderModification> { }
 
 // ============================================================================
 // Shift Types
@@ -154,7 +154,7 @@ export interface OrderModificationListResponse extends Array<OrderModification> 
 export interface Shift {
   id: string;
   userId: string;
-  status: string;
+  status: "OPEN" | "CLOSED";
   startingCash: number;
   endingCash: number | null;
   expectedCash: number | null;
@@ -180,9 +180,9 @@ export interface ShiftWithOrders extends ShiftWithUser {
   orders: Order[];
 }
 
-export interface ShiftListResponse extends Array<ShiftWithUser> {}
+export interface ShiftListResponse extends Array<ShiftWithUser> { }
 
-export interface ShiftResponse extends ShiftWithUser {}
+export interface ShiftResponse extends ShiftWithUser { }
 
 // ============================================================================
 // Settings Types
@@ -199,7 +199,7 @@ export interface Settings {
   updatedAt: Date;
 }
 
-export interface SettingsResponse extends Settings {}
+export interface SettingsResponse extends Settings { }
 
 // ============================================================================
 // Receipt Template Types
@@ -221,7 +221,7 @@ export interface ReceiptTemplate {
   updatedAt: Date;
 }
 
-export interface ReceiptTemplateResponse extends ReceiptTemplate {}
+export interface ReceiptTemplateResponse extends ReceiptTemplate { }
 
 // ============================================================================
 // Analytics Types
@@ -233,7 +233,7 @@ export interface SalesByHourData {
   count: number;
 }
 
-export interface SalesByHourResponse extends Array<SalesByHourData> {}
+export interface SalesByHourResponse extends Array<SalesByHourData> { }
 
 export interface TopSellingItem {
   menuId: string;
@@ -244,7 +244,7 @@ export interface TopSellingItem {
   averagePrice: number;
 }
 
-export interface TopSellingItemsResponse extends Array<TopSellingItem> {}
+export interface TopSellingItemsResponse extends Array<TopSellingItem> { }
 
 export interface PaymentDistribution {
   paymentMethod: string;
@@ -253,7 +253,7 @@ export interface PaymentDistribution {
   percentage: number;
 }
 
-export interface PaymentDistributionResponse extends Array<PaymentDistribution> {}
+export interface PaymentDistributionResponse extends Array<PaymentDistribution> { }
 
 export interface SalesTrendData {
   date: Date;
@@ -261,7 +261,7 @@ export interface SalesTrendData {
   count: number;
 }
 
-export interface SalesTrendResponse extends Array<SalesTrendData> {}
+export interface SalesTrendResponse extends Array<SalesTrendData> { }
 
 export interface PeriodComparison {
   currentPeriod: {
@@ -308,7 +308,7 @@ export interface ActivityLog {
   createdAt: Date;
 }
 
-export interface ActivityLogListResponse extends Array<ActivityLog> {}
+export interface ActivityLogListResponse extends Array<ActivityLog> { }
 
 // ============================================================================
 // Generic API Response Types

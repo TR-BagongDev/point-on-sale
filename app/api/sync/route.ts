@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
+import { createOrderSchema } from "@/lib/validation";
+import { createValidationError, handleApiError } from "@/lib/error-handler";
 
 // Generate order number
 function generateOrderNumber(): string {
@@ -15,6 +18,10 @@ function generateOrderNumber(): string {
 // POST - Sync multiple orders (batch synchronization for offline orders)
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+    const { session } = authResult;
+
     const body = await request.json();
     const { orders } = body;
 
@@ -36,23 +43,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get or create default user for orders
-    let user = await prisma.user.findFirst({
-      where: { role: "ADMIN" },
-    });
-
-    if (!user) {
-      // Create a default cashier if no user exists
-      user = await prisma.user.create({
-        data: {
-          name: "Kasir Default",
-          email: "kasir@warung.com",
-          password: "$2a$10$dummy", // Not used for login
-          role: "KASIR",
-        },
-      });
-    }
-
     const syncedOrders: unknown[] = [];
     const failedOrders: { order: unknown; error: string }[] = [];
     const skippedOrders: { order: unknown; reason: string }[] = [];
@@ -62,91 +52,25 @@ export async function POST(request: NextRequest) {
       try {
         const {
           orderNumber,
-          items,
-          subtotal,
-          tax,
-          discount,
-          total,
-          paymentMethod,
-          notes,
           createdAt,
           updatedAt,
+          ...orderFields
         } = orderData;
 
-        // Validate items array
-        if (!items || !Array.isArray(items)) {
+        // Validate with Zod schema
+        const parsed = createOrderSchema.safeParse(orderFields);
+        if (!parsed.success) {
           failedOrders.push({
             order: orderData,
-            error: "Items must be an array"
+            error: parsed.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(", ")
           });
           continue;
         }
 
-        if (items.length === 0) {
-          failedOrders.push({
-            order: orderData,
-            error: "At least one item is required"
-          });
-          continue;
-        }
-
-        // Validate each item and parse prices
-        const parsedItems: Array<{
-          menuId: string;
-          quantity: number;
-          price: number;
-          notes?: string;
-        }> = [];
-
-        for (const item of items) {
-          if (!item.menuId || typeof item.menuId !== "string") {
-            failedOrders.push({
-              order: orderData,
-              error: "Each item must have a valid menuId"
-            });
-            continue;
-          }
-
-          if (!item.quantity || typeof item.quantity !== "number" || item.quantity <= 0) {
-            failedOrders.push({
-              order: orderData,
-              error: "Each item must have a valid positive quantity"
-            });
-            continue;
-          }
-
-          if (item.price === undefined || item.price === null || item.price === "") {
-            failedOrders.push({
-              order: orderData,
-              error: "Each item must have a price"
-            });
-            continue;
-          }
-
-          const parsedPrice = typeof item.price === "string" ? parseFloat(item.price) : item.price;
-          if (isNaN(parsedPrice) || parsedPrice < 0) {
-            failedOrders.push({
-              order: orderData,
-              error: "Item price must be a valid positive number"
-            });
-            continue;
-          }
-
-          parsedItems.push({
-            menuId: item.menuId,
-            quantity: item.quantity,
-            price: parsedPrice,
-            notes: item.notes?.trim() || null,
-          });
-        }
-
-        // Skip if any item validation failed
-        if (parsedItems.length !== items.length) {
-          continue;
-        }
+        const { items, subtotal, tax, discount, total, paymentMethod, notes } = parsed.data;
 
         // Check if all menu items exist and are available
-        const menuIds = parsedItems.map((item) => item.menuId);
+        const menuIds = items.map((item) => item.menuId);
         const menuItems = await prisma.menu.findMany({
           where: { id: { in: menuIds } },
         });
@@ -167,89 +91,6 @@ export async function POST(request: NextRequest) {
           failedOrders.push({
             order: orderData,
             error: `Some menu items are not available: ${unavailableItems.map((m) => m.name).join(", ")}`
-          });
-          continue;
-        }
-
-        // Validate subtotal
-        if (subtotal === undefined || subtotal === null || subtotal === "") {
-          failedOrders.push({
-            order: orderData,
-            error: "Subtotal is required"
-          });
-          continue;
-        }
-
-        const parsedSubtotal = parseFloat(subtotal);
-        if (isNaN(parsedSubtotal) || parsedSubtotal < 0) {
-          failedOrders.push({
-            order: orderData,
-            error: "Subtotal must be a valid positive number"
-          });
-          continue;
-        }
-
-        // Validate tax if provided
-        let parsedTax = 0;
-        if (tax !== undefined && tax !== null && tax !== "") {
-          parsedTax = parseFloat(tax);
-          if (isNaN(parsedTax) || parsedTax < 0) {
-            failedOrders.push({
-              order: orderData,
-              error: "Tax must be a valid positive number"
-            });
-            continue;
-          }
-        }
-
-        // Validate discount if provided
-        let parsedDiscount = 0;
-        if (discount !== undefined && discount !== null && discount !== "") {
-          parsedDiscount = parseFloat(discount);
-          if (isNaN(parsedDiscount) || parsedDiscount < 0) {
-            failedOrders.push({
-              order: orderData,
-              error: "Discount must be a valid positive number"
-            });
-            continue;
-          }
-        }
-
-        // Validate total
-        if (total === undefined || total === null || total === "") {
-          failedOrders.push({
-            order: orderData,
-            error: "Total is required"
-          });
-          continue;
-        }
-
-        const parsedTotal = parseFloat(total);
-        if (isNaN(parsedTotal) || parsedTotal < 0) {
-          failedOrders.push({
-            order: orderData,
-            error: "Total must be a valid positive number"
-          });
-          continue;
-        }
-
-        // Validate payment method if provided
-        const validPaymentMethods = ["CASH", "CARD", "QRIS", "TRANSFER"];
-        if (paymentMethod !== undefined && paymentMethod !== null) {
-          if (typeof paymentMethod !== "string" || !validPaymentMethods.includes(paymentMethod)) {
-            failedOrders.push({
-              order: orderData,
-              error: `Payment method must be one of: ${validPaymentMethods.join(", ")}`
-            });
-            continue;
-          }
-        }
-
-        // Validate notes if provided
-        if (notes !== undefined && notes !== null && typeof notes !== "string") {
-          failedOrders.push({
-            order: orderData,
-            error: "Notes must be a string"
           });
           continue;
         }
@@ -285,19 +126,19 @@ export async function POST(request: NextRequest) {
           const updatedOrder = await prisma.order.update({
             where: { id: existingOrder.id },
             data: {
-              subtotal: parsedSubtotal,
-              tax: parsedTax,
-              discount: parsedDiscount,
-              total: parsedTotal,
+              subtotal,
+              tax: tax ?? 0,
+              discount: discount ?? 0,
+              total,
               paymentMethod: paymentMethod ?? existingOrder.paymentMethod,
               status: existingOrder.status, // Preserve status
               notes: notes?.trim() || existingOrder.notes,
               items: {
-                create: parsedItems.map((item) => ({
+                create: items.map((item) => ({
                   menuId: item.menuId,
                   quantity: item.quantity,
                   price: item.price,
-                  notes: item.notes,
+                  notes: item.notes?.trim() || null,
                 })),
               },
             },
@@ -331,22 +172,22 @@ export async function POST(request: NextRequest) {
         const order = await prisma.order.create({
           data: {
             orderNumber: finalOrderNumber,
-            userId: user.id,
-            subtotal: parsedSubtotal,
-            tax: parsedTax,
-            discount: parsedDiscount,
-            total: parsedTotal,
+            userId: session.user.id,
+            subtotal,
+            tax: tax ?? 0,
+            discount: discount ?? 0,
+            total,
             paymentMethod: paymentMethod ?? "CASH",
             status: "PENDING",
             notes: notes?.trim() || null,
             // Preserve original createdAt if provided (for offline orders)
             createdAt: createdAt ? new Date(createdAt) : undefined,
             items: {
-              create: parsedItems.map((item) => ({
+              create: items.map((item) => ({
                 menuId: item.menuId,
                 quantity: item.quantity,
                 price: item.price,
-                notes: item.notes,
+                notes: item.notes?.trim() || null,
               })),
             },
           },

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/auth-helpers";
+import { createOrderSchema, patchOrderSchema } from "@/lib/validation";
+import { handleApiError, createValidationError } from "@/lib/error-handler";
 
 // Generate order number
 function generateOrderNumber(): string {
@@ -13,15 +15,23 @@ function generateOrderNumber(): string {
   return `ORD-${dateStr}-${timeStr}-${random}`;
 }
 
-// GET - Get all orders or filter by date/status
+// GET - Get all orders or filter by date/status (with pagination)
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const date = searchParams.get("date");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const userId = searchParams.get("userId");
+
+    // Pagination params
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+    const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
 
@@ -54,35 +64,48 @@ export async function GET(request: NextRequest) {
       where.userId = userId;
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const [orders, totalCount] = await prisma.$transaction([
+      prisma.order.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          shift: {
+            select: {
+              id: true,
+              status: true,
+              openedAt: true,
+            },
+          },
+          items: {
+            include: {
+              menu: true,
+            },
           },
         },
-        shift: {
-          select: {
-            id: true,
-            status: true,
-            openedAt: true,
-          },
+        orderBy: {
+          createdAt: "desc",
         },
-        items: {
-          include: {
-            menu: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      data: orders,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
       },
     });
-
-    return NextResponse.json(orders);
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(
@@ -95,69 +118,22 @@ export async function GET(request: NextRequest) {
 // POST - Create new order
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+    const { session } = authResult;
+
     const body = await request.json();
-    const {
-      items,
-      subtotal,
-      tax,
-      discount,
-      total,
-      paymentMethod,
-      notes,
-    } = body;
 
-    // Validate items array
-    if (!items || !Array.isArray(items)) {
-      return NextResponse.json(
-        { error: "Items must be an array" },
-        { status: 400 }
-      );
+    // Validate input with Zod schema
+    const parsed = createOrderSchema.safeParse(body);
+    if (!parsed.success) {
+      return handleApiError(createValidationError(parsed.error), "Create order");
     }
 
-    if (items.length === 0) {
-      return NextResponse.json(
-        { error: "At least one item is required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate each item and parse prices
-    for (const item of items) {
-      if (!item.menuId || typeof item.menuId !== "string") {
-        return NextResponse.json(
-          { error: "Each item must have a valid menuId" },
-          { status: 400 }
-        );
-      }
-
-      if (!item.quantity || typeof item.quantity !== "number" || item.quantity <= 0) {
-        return NextResponse.json(
-          { error: "Each item must have a valid positive quantity" },
-          { status: 400 }
-        );
-      }
-
-      if (item.price === undefined || item.price === null || item.price === "") {
-        return NextResponse.json(
-          { error: "Each item must have a price" },
-          { status: 400 }
-        );
-      }
-
-      const parsedPrice = typeof item.price === "string" ? parseFloat(item.price) : item.price;
-      if (isNaN(parsedPrice) || parsedPrice < 0) {
-        return NextResponse.json(
-          { error: "Item price must be a valid positive number" },
-          { status: 400 }
-        );
-      }
-
-      // Store the parsed price back to the item
-      (item as { price: number }).price = parsedPrice;
-    }
+    const { items, subtotal, tax, discount, total, paymentMethod, notes } = parsed.data;
 
     // Check if all menu items exist and are available
-    const menuIds = items.map((item: { menuId: string }) => item.menuId);
+    const menuIds = items.map((item) => item.menuId);
     const menuItems = await prisma.menu.findMany({
       where: { id: { in: menuIds } },
     });
@@ -180,121 +156,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate subtotal
-    if (subtotal === undefined || subtotal === null || subtotal === "") {
-      return NextResponse.json(
-        { error: "Subtotal is required" },
-        { status: 400 }
-      );
-    }
-
-    const parsedSubtotal = parseFloat(subtotal);
-    if (isNaN(parsedSubtotal) || parsedSubtotal < 0) {
-      return NextResponse.json(
-        { error: "Subtotal must be a valid positive number" },
-        { status: 400 }
-      );
-    }
-
-    // Validate tax if provided
-    let parsedTax = 0;
-    if (tax !== undefined && tax !== null && tax !== "") {
-      parsedTax = parseFloat(tax);
-      if (isNaN(parsedTax) || parsedTax < 0) {
-        return NextResponse.json(
-          { error: "Tax must be a valid positive number" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate discount if provided
-    let parsedDiscount = 0;
-    if (discount !== undefined && discount !== null && discount !== "") {
-      parsedDiscount = parseFloat(discount);
-      if (isNaN(parsedDiscount) || parsedDiscount < 0) {
-        return NextResponse.json(
-          { error: "Discount must be a valid positive number" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate total
-    if (total === undefined || total === null || total === "") {
-      return NextResponse.json(
-        { error: "Total is required" },
-        { status: 400 }
-      );
-    }
-
-    const parsedTotal = parseFloat(total);
-    if (isNaN(parsedTotal) || parsedTotal < 0) {
-      return NextResponse.json(
-        { error: "Total must be a valid positive number" },
-        { status: 400 }
-      );
-    }
-
-    // Validate payment method if provided
-    const validPaymentMethods = ["CASH", "CARD", "QRIS", "TRANSFER"];
-    if (paymentMethod !== undefined && paymentMethod !== null) {
-      if (typeof paymentMethod !== "string" || !validPaymentMethods.includes(paymentMethod)) {
-        return NextResponse.json(
-          { error: `Payment method must be one of: ${validPaymentMethods.join(", ")}` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate notes if provided
-    if (notes !== undefined && notes !== null && typeof notes !== "string") {
-      return NextResponse.json(
-        { error: "Notes must be a string" },
-        { status: 400 }
-      );
-    }
-
-    // Get or create default user for orders
-    let user = await prisma.user.findFirst({
-      where: { role: "ADMIN" },
+    // Find active shift for the current user
+    let shiftId: string | undefined;
+    const activeShift = await prisma.shift.findFirst({
+      where: {
+        userId: session.user.id,
+        status: "OPEN",
+      },
+      select: {
+        id: true,
+      },
     });
 
-    if (!user) {
-      // Create a default cashier if no user exists
-      user = await prisma.user.create({
-        data: {
-          name: "Kasir Default",
-          email: "kasir@warung.com",
-          password: "$2a$10$dummy", // Not used for login
-          role: "KASIR",
-        },
-      });
-    }
-
-    // Try to get the current session and find active shift
-    let shiftId: string | undefined;
-    try {
-      const session = await auth();
-      if (session?.user?.id) {
-        // Find the user's currently open shift
-        const activeShift = await prisma.shift.findFirst({
-          where: {
-            userId: session.user.id,
-            status: "OPEN",
-          },
-          select: {
-            id: true,
-          },
-        });
-
-        if (activeShift) {
-          shiftId = activeShift.id;
-        }
-      }
-    } catch (error) {
-      // If auth fails, continue without shift linking
-      // This maintains backward compatibility
+    if (activeShift) {
+      shiftId = activeShift.id;
     }
 
     const orderNumber = generateOrderNumber();
@@ -302,24 +177,22 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        userId: user.id,
-        subtotal: parsedSubtotal,
-        tax: parsedTax,
-        discount: parsedDiscount,
-        total: parsedTotal,
+        userId: session.user.id,
+        subtotal,
+        tax: tax ?? 0,
+        discount: discount ?? 0,
+        total,
         paymentMethod: paymentMethod ?? "CASH",
         status: "PENDING",
         notes: notes?.trim() || null,
         shiftId: shiftId,
         items: {
-          create: items.map(
-            (item: { menuId: string; quantity: number; price: number; notes?: string }) => ({
-              menuId: item.menuId,
-              quantity: item.quantity,
-              price: item.price,
-              notes: item.notes?.trim() || null,
-            })
-          ),
+          create: items.map((item) => ({
+            menuId: item.menuId,
+            quantity: item.quantity,
+            price: item.price,
+            notes: item.notes?.trim() || null,
+          })),
         },
       },
       include: {
@@ -350,15 +223,24 @@ export async function POST(request: NextRequest) {
 // PUT - Update order status
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, status, notes } = body;
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
 
-    // Validate required fields
+    const body = await request.json();
+    const { id, ...updateFields } = body;
+
+    // Validate required id
     if (!id) {
       return NextResponse.json(
         { error: "Order ID is required" },
         { status: 400 }
       );
+    }
+
+    // Validate update fields with Zod
+    const parsed = patchOrderSchema.safeParse(updateFields);
+    if (!parsed.success) {
+      return handleApiError(createValidationError(parsed.error), "Update order");
     }
 
     // Check if order exists
@@ -373,30 +255,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Validate status if provided
-    const validStatuses = ["PENDING", "PROCESSING", "READY", "COMPLETED", "CANCELLED"];
-    if (status !== undefined && status !== null && status !== "") {
-      if (typeof status !== "string" || !validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: `Status must be one of: ${validStatuses.join(", ")}` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate notes if provided
-    if (notes !== undefined && notes !== null && typeof notes !== "string") {
-      return NextResponse.json(
-        { error: "Notes must be a string" },
-        { status: 400 }
-      );
-    }
-
     const order = await prisma.order.update({
       where: { id },
       data: {
-        status,
-        notes: notes?.trim() || null,
+        ...parsed.data,
+        notes: parsed.data.notes?.trim() || null,
       },
       include: {
         user: {

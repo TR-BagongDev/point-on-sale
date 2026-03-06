@@ -95,6 +95,7 @@ export default function DashboardPage() {
       const params = new URLSearchParams({
         startDate: dateFrom,
         endDate: dateTo,
+        limit: "1000",
       });
       const res = await fetch(`/api/order?${params}`);
 
@@ -102,7 +103,8 @@ export default function DashboardPage() {
         throw new Error('Gagal memuat data pesanan');
       }
 
-      const orders = await res.json();
+      const result = await res.json();
+      const orders = result.data;
 
       // Calculate stats
       const todaySales = orders.reduce(
@@ -322,241 +324,241 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Selamat datang di Warung POS Dashboard
-            </p>
-          </div>
-          <Button onClick={exportToCSV} variant="outline" disabled={loading || analyticsLoading} className="w-full sm:w-auto">
-            <Download className="h-4 w-4 mr-2" />
-            Export Analitik
-          </Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Selamat datang di Warung POS Dashboard
+          </p>
         </div>
+        <Button onClick={exportToCSV} variant="outline" disabled={loading || analyticsLoading} className="w-full sm:w-auto">
+          <Download className="h-4 w-4 mr-2" />
+          Export Analitik
+        </Button>
+      </div>
 
-        {/* Error Message */}
-        {error && (
-          <Card className="border-destructive bg-destructive/10">
-            <CardContent className="p-4">
-              <p className="text-sm text-destructive font-medium">
-                ⚠️ {error}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Filters */}
-        <Card>
+      {/* Error Message */}
+      {error && (
+        <Card className="border-destructive bg-destructive/10">
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium whitespace-nowrap">Dari:</span>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full sm:w-40"
-                  disabled={loading}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium whitespace-nowrap">Sampai:</span>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full sm:w-40"
-                  disabled={loading}
-                />
-              </div>
-              {loading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span>Memuat data...</span>
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-destructive font-medium">
+              ⚠️ {error}
+            </p>
           </CardContent>
         </Card>
+      )}
 
-        {/* Period Comparison Cards */}
-        {periodComparison && !analyticsLoading && (
-          <PeriodComparisonCards data={periodComparison} />
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loading ? (
-            // Loading skeletons
-            statCards.map((stat) => (
-              <Card key={stat.title}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <div className="h-4 bg-muted animate-pulse rounded w-24"></div>
-                      <div className="h-8 bg-muted animate-pulse rounded w-20"></div>
-                    </div>
-                    <div className={`p-3 rounded-full ${stat.bgColor} animate-pulse`}>
-                      <div className="h-6 w-6 bg-muted/50 rounded"></div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            // Actual stats
-            statCards.map((stat) => (
-              <Card key={stat.title}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
-                        {stat.title}
-                      </p>
-                      <p className="text-xl sm:text-2xl font-bold truncate">{stat.value}</p>
-                    </div>
-                    <div className={`p-2 sm:p-3 rounded-full ${stat.bgColor} flex-shrink-0 ml-2`}>
-                      <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {analyticsLoading ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg">Tren Penjualan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-64">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-sm text-muted-foreground">Memuat data...</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg">Penjualan per Jam</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-64">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-sm text-muted-foreground">Memuat data...</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <>
-              <SalesTrendChart data={salesTrend} />
-              <SalesByHourChart data={salesByHour} />
-            </>
-          )}
-        </div>
-
-        {/* Items and Payment Distribution */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {analyticsLoading ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg">Menu Terlaris</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-64">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-sm text-muted-foreground">Memuat data...</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg">Distribusi Pembayaran</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-64">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <p className="text-sm text-muted-foreground">Memuat data...</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <>
-              <TopSellingItems
-                topItems={topItems}
-                bottomItems={bottomItems}
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium whitespace-nowrap">Dari:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full sm:w-40"
+                disabled={loading}
               />
-              <PaymentMethodPieChart data={paymentDistribution} />
-            </>
-          )}
-        </div>
-
-        {/* Recent Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Clock className="h-5 w-5" />
-              Pesanan Terbaru
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Memuat data...
-              </div>
-            ) : recentOrders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Belum ada pesanan untuk periode ini
-              </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {recentOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border hover:bg-muted/50 transition-colors gap-3"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 font-bold flex-shrink-0">
-                        {order.orderNumber.slice(-3)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm sm:text-base truncate">{order.orderNumber}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                          oleh {order.user.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:text-right">
-                      <p className="font-bold text-primary-600 text-sm sm:text-base">
-                        {formatCurrency(order.total)}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                        {formatTime(order.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium whitespace-nowrap">Sampai:</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full sm:w-40"
+                disabled={loading}
+              />
+            </div>
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>Memuat data...</span>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Period Comparison Cards */}
+      {periodComparison && !analyticsLoading && (
+        <PeriodComparisonCards data={periodComparison} />
+      )}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {loading ? (
+          // Loading skeletons
+          statCards.map((stat) => (
+            <Card key={stat.title}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted animate-pulse rounded w-24"></div>
+                    <div className="h-8 bg-muted animate-pulse rounded w-20"></div>
+                  </div>
+                  <div className={`p-3 rounded-full ${stat.bgColor} animate-pulse`}>
+                    <div className="h-6 w-6 bg-muted/50 rounded"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          // Actual stats
+          statCards.map((stat) => (
+            <Card key={stat.title}>
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
+                      {stat.title}
+                    </p>
+                    <p className="text-xl sm:text-2xl font-bold truncate">{stat.value}</p>
+                  </div>
+                  <div className={`p-2 sm:p-3 rounded-full ${stat.bgColor} flex-shrink-0 ml-2`}>
+                    <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {analyticsLoading ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Tren Penjualan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-64">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">Memuat data...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Penjualan per Jam</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-64">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">Memuat data...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <SalesTrendChart data={salesTrend} />
+            <SalesByHourChart data={salesByHour} />
+          </>
+        )}
+      </div>
+
+      {/* Items and Payment Distribution */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {analyticsLoading ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Menu Terlaris</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-64">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">Memuat data...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Distribusi Pembayaran</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center h-64">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">Memuat data...</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <TopSellingItems
+              topItems={topItems}
+              bottomItems={bottomItems}
+            />
+            <PaymentMethodPieChart data={paymentDistribution} />
+          </>
+        )}
+      </div>
+
+      {/* Recent Orders */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Clock className="h-5 w-5" />
+            Pesanan Terbaru
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Memuat data...
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Belum ada pesanan untuk periode ini
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              {recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border hover:bg-muted/50 transition-colors gap-3"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600 font-bold flex-shrink-0">
+                      {order.orderNumber.slice(-3)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm sm:text-base truncate">{order.orderNumber}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        oleh {order.user.name}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:text-right">
+                    <p className="font-bold text-primary-600 text-sm sm:text-base">
+                      {formatCurrency(order.total)}
+                    </p>
+                    <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                      {formatTime(order.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

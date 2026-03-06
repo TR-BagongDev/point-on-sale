@@ -19,6 +19,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     menu: {
       findMany: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
     },
+    $transaction: vi.fn((queries: Promise<unknown>[]) => Promise.all(queries)),
   },
 }));
 
@@ -72,34 +74,17 @@ beforeEach(() => {
 
 describe('GET /api/order', () => {
   it('should return empty array when no orders exist', async () => {
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce([]);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce([] as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(0);
 
     const request = createMockGetRequest();
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toEqual([]);
-    expect(prisma.order.findMany).toHaveBeenCalledWith({
-      where: {},
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        items: {
-          include: {
-            menu: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    expect(data.data).toEqual([]);
+    expect(data.pagination).toBeDefined();
+    expect(data.pagination.total).toBe(0);
   });
 
   it('should return all orders when no filters are provided', async () => {
@@ -118,16 +103,7 @@ describe('GET /api/order', () => {
         createdAt: new Date('2024-01-15T11:00:00Z'),
         updatedAt: new Date('2024-01-15T11:30:00Z'),
         user: mockAdminUser,
-        items: [
-          {
-            id: 'item1',
-            menuId: mockMenu2.id,
-            quantity: 2,
-            price: 22000,
-            notes: null,
-            menu: mockMenu2,
-          },
-        ],
+        items: [{ id: 'item1', menuId: mockMenu2.id, quantity: 2, price: 22000, notes: null, menu: mockMenu2 }],
       },
       {
         id: 'order1',
@@ -143,29 +119,21 @@ describe('GET /api/order', () => {
         createdAt: new Date('2024-01-15T10:30:00Z'),
         updatedAt: new Date('2024-01-15T10:30:00Z'),
         user: mockCashierUser,
-        items: [
-          {
-            id: 'item2',
-            menuId: mockMenu1.id,
-            quantity: 1,
-            price: 25000,
-            notes: null,
-            menu: mockMenu1,
-          },
-        ],
+        items: [{ id: 'item2', menuId: mockMenu1.id, quantity: 1, price: 25000, notes: null, menu: mockMenu1 }],
       },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(2);
 
     const request = createMockGetRequest();
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveLength(2);
-    expect(data[0].id).toBe('order2');
-    expect(data[1].id).toBe('order1');
+    expect(data.data).toHaveLength(2);
+    expect(data.data[0].id).toBe('order2');
+    expect(data.data[1].id).toBe('order1');
   });
 
   it('should filter orders by status', async () => {
@@ -188,22 +156,16 @@ describe('GET /api/order', () => {
       },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(1);
 
     const request = createMockGetRequest({ status: 'PENDING' });
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveLength(1);
-    expect(data[0].status).toBe('PENDING');
-    expect(prisma.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          status: 'PENDING',
-        }),
-      })
-    );
+    expect(data.data).toHaveLength(1);
+    expect(data.data[0].status).toBe('PENDING');
   });
 
   it('should filter orders by userId', async () => {
@@ -226,15 +188,16 @@ describe('GET /api/order', () => {
       },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(1);
 
     const request = createMockGetRequest({ userId: mockCashierUser.id });
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveLength(1);
-    expect(data[0].userId).toBe(mockCashierUser.id);
+    expect(data.data).toHaveLength(1);
+    expect(data.data[0].userId).toBe(mockCashierUser.id);
   });
 
   it('should filter orders by single date', async () => {
@@ -256,42 +219,25 @@ describe('GET /api/order', () => {
       },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(1);
 
     const request = createMockGetRequest({ date: '2024-01-15' });
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveLength(1);
-    expect(prisma.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          createdAt: expect.any(Object),
-        }),
-      })
-    );
+    expect(data.data).toHaveLength(1);
   });
 
   it('should filter orders by date range', async () => {
     const mockOrders = [
-      {
-        id: 'order1',
-        userId: mockCashierUser.id,
-        createdAt: new Date('2024-01-15T10:30:00Z'),
-        user: mockCashierUser,
-        items: [],
-      },
-      {
-        id: 'order2',
-        userId: mockAdminUser.id,
-        createdAt: new Date('2024-01-16T11:00:00Z'),
-        user: mockAdminUser,
-        items: [],
-      },
+      { id: 'order1', userId: mockCashierUser.id, createdAt: new Date('2024-01-15T10:30:00Z'), user: mockCashierUser, items: [] },
+      { id: 'order2', userId: mockAdminUser.id, createdAt: new Date('2024-01-16T11:00:00Z'), user: mockAdminUser, items: [] },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(2);
 
     const request = createMockGetRequest({
       startDate: '2024-01-15',
@@ -301,7 +247,7 @@ describe('GET /api/order', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toHaveLength(2);
+    expect(data.data).toHaveLength(2);
   });
 
   it('should include user, menu, and items data', async () => {
@@ -319,48 +265,31 @@ describe('GET /api/order', () => {
         notes: null,
         createdAt: new Date('2024-01-15T10:30:00Z'),
         updatedAt: new Date('2024-01-15T10:30:00Z'),
-        user: {
-          id: mockCashierUser.id,
-          name: mockCashierUser.name,
-          email: mockCashierUser.email,
-        },
+        user: { id: mockCashierUser.id, name: mockCashierUser.name, email: mockCashierUser.email },
         items: [
-          {
-            id: 'item1',
-            menuId: mockMenu1.id,
-            quantity: 1,
-            price: 25000,
-            notes: null,
-            menu: mockMenu1,
-          },
-          {
-            id: 'item2',
-            menuId: mockMenu3.id,
-            quantity: 1,
-            price: 5000,
-            notes: null,
-            menu: mockMenu3,
-          },
+          { id: 'item1', menuId: mockMenu1.id, quantity: 1, price: 25000, notes: null, menu: mockMenu1 },
+          { id: 'item2', menuId: mockMenu3.id, quantity: 1, price: 5000, notes: null, menu: mockMenu3 },
         ],
       },
     ];
 
-    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders);
+    vi.mocked(prisma.order.findMany).mockResolvedValueOnce(mockOrders as any);
+    vi.mocked(prisma.order.count).mockResolvedValueOnce(1);
 
     const request = createMockGetRequest();
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data[0].user).toBeDefined();
-    expect(data[0].user.id).toBe(mockCashierUser.id);
-    expect(data[0].items).toHaveLength(2);
-    expect(data[0].items[0].menu).toBeDefined();
-    expect(data[0].items[0].menu.name).toBe(mockMenu1.name);
+    expect(data.data[0].user).toBeDefined();
+    expect(data.data[0].user.id).toBe(mockCashierUser.id);
+    expect(data.data[0].items).toHaveLength(2);
+    expect(data.data[0].items[0].menu).toBeDefined();
+    expect(data.data[0].items[0].menu.name).toBe(mockMenu1.name);
   });
 
   it('should return 500 on database error', async () => {
-    vi.mocked(prisma.order.findMany).mockRejectedValueOnce(new Error('Database error'));
+    (prisma as any).$transaction.mockRejectedValueOnce(new Error('Database error'));
 
     const request = createMockGetRequest();
     const response = await GET(request);

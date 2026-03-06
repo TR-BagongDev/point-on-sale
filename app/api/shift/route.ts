@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-
-async function requireAuth() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  return null;
-}
+import { requireAuth } from "@/lib/auth-helpers";
 
 // GET - Get all shifts with optional filtering
 export async function GET(request: NextRequest) {
   try {
-    const guard = await requireAuth();
-    if (guard) return guard;
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
@@ -84,10 +74,10 @@ export async function GET(request: NextRequest) {
 // POST - Open a new shift
 export async function POST(request: NextRequest) {
   try {
-    const guard = await requireAuth();
-    if (guard) return guard;
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+    const { session } = authResult;
 
-    const session = await auth();
     const body = await request.json();
     const { startingCash } = body;
 
@@ -99,7 +89,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const parsedStartingCash = parseFloat(startingCash);
+    const parsedStartingCash = Math.round(Number(startingCash));
     if (isNaN(parsedStartingCash) || parsedStartingCash < 0) {
       return NextResponse.json(
         { error: "Starting cash must be a valid positive number" },
@@ -110,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Check if user has an open shift
     const existingOpenShift = await prisma.shift.findFirst({
       where: {
-        userId: session!.user.id,
+        userId: session.user.id,
         status: "OPEN",
       },
     });
@@ -125,7 +115,7 @@ export async function POST(request: NextRequest) {
     // Create shift
     const shift = await prisma.shift.create({
       data: {
-        userId: session!.user.id,
+        userId: session.user.id,
         startingCash: parsedStartingCash,
         status: "OPEN",
       },

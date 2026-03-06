@@ -1,9 +1,6 @@
 import { getUserMessage, logError } from "@/lib/error-handler"
 import { error as toastError, success as toastSuccess } from "@/lib/toast"
 
-// Import offline store (lazy import to avoid SSR issues)
-let offlineStore: any = null
-
 /**
  * Queued request interface for offline storage
  */
@@ -594,20 +591,7 @@ function isOnline(): boolean {
   return navigator.onLine
 }
 
-/**
- * Get offline state from store
- * Returns null if store is not available (SSR)
- */
-function getOfflineState(): { isOnline: boolean } | null {
-  if (typeof window === "undefined" || !offlineStore) {
-    return null
-  }
-  try {
-    return offlineStore.getState()
-  } catch {
-    return null
-  }
-}
+
 
 /**
  * Generate unique ID for queued requests

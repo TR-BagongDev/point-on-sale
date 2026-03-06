@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-
-async function requireAdmin() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  return null;
-}
+import { requireAdmin } from "@/lib/auth-helpers";
+import { updateReceiptTemplateSchema } from "@/lib/validation";
+import { handleApiError, createValidationError } from "@/lib/error-handler";
 
 // GET - Get receipt template
 export async function GET() {
   try {
-    const guard = await requireAdmin();
-    if (guard) return guard;
+    const authResult = await requireAdmin();
+    if ("error" in authResult) return authResult.error;
 
     const template = await prisma.receiptTemplate.findFirst({
       where: { isActive: true },
@@ -38,75 +26,18 @@ export async function GET() {
 // PUT - Update receipt template
 export async function PUT(request: NextRequest) {
   try {
-    const guard = await requireAdmin();
-    if (guard) return guard;
+    const authResult = await requireAdmin();
+    if ("error" in authResult) return authResult.error;
 
     const body = await request.json();
-    const {
-      header,
-      footer,
-      showDate,
-      showTime,
-      showCashier,
-      showTax,
-      paperWidth,
-    } = body;
 
-    // Validate header if provided
-    if (header !== undefined && header !== null && typeof header !== "string") {
-      return NextResponse.json(
-        { error: "Header must be a string" },
-        { status: 400 }
-      );
+    // Validate with Zod schema
+    const parsed = updateReceiptTemplateSchema.safeParse(body);
+    if (!parsed.success) {
+      return handleApiError(createValidationError(parsed.error), "Update receipt template");
     }
 
-    // Validate footer if provided
-    if (footer !== undefined && footer !== null && typeof footer !== "string") {
-      return NextResponse.json(
-        { error: "Footer must be a string" },
-        { status: 400 }
-      );
-    }
-
-    // Validate boolean fields
-    if (showDate !== undefined && typeof showDate !== "boolean") {
-      return NextResponse.json(
-        { error: "showDate must be a boolean" },
-        { status: 400 }
-      );
-    }
-
-    if (showTime !== undefined && typeof showTime !== "boolean") {
-      return NextResponse.json(
-        { error: "showTime must be a boolean" },
-        { status: 400 }
-      );
-    }
-
-    if (showCashier !== undefined && typeof showCashier !== "boolean") {
-      return NextResponse.json(
-        { error: "showCashier must be a boolean" },
-        { status: 400 }
-      );
-    }
-
-    if (showTax !== undefined && typeof showTax !== "boolean") {
-      return NextResponse.json(
-        { error: "showTax must be a boolean" },
-        { status: 400 }
-      );
-    }
-
-    // Validate paperWidth if provided
-    if (paperWidth !== undefined && paperWidth !== null) {
-      const parsedWidth = Number(paperWidth);
-      if (isNaN(parsedWidth) || parsedWidth <= 0) {
-        return NextResponse.json(
-          { error: "Paper width must be a valid positive number" },
-          { status: 400 }
-        );
-      }
-    }
+    const { header, footer, showDate, showTime, showCashier, showTax, paperWidth } = parsed.data;
 
     // Find existing template or create default
     let template = await prisma.receiptTemplate.findFirst({
@@ -123,7 +54,7 @@ export async function PUT(request: NextRequest) {
           ...(showTime !== undefined && { showTime }),
           ...(showCashier !== undefined && { showCashier }),
           ...(showTax !== undefined && { showTax }),
-          ...(paperWidth !== undefined && paperWidth !== null && { paperWidth: Number(paperWidth) }),
+          ...(paperWidth !== undefined && { paperWidth }),
         },
       });
     } else {
@@ -136,7 +67,7 @@ export async function PUT(request: NextRequest) {
           showTime: showTime ?? true,
           showCashier: showCashier ?? true,
           showTax: showTax ?? true,
-          paperWidth: paperWidth !== undefined && paperWidth !== null ? Number(paperWidth) : 80,
+          paperWidth: paperWidth ?? 80,
           isActive: true,
         },
       });

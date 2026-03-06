@@ -29,3 +29,4 @@ test-results/
 # TypeScript build
 *.tsbuildinfo
 *.pen
+*.png

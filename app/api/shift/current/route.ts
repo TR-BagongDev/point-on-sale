@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-
-async function requireAuth() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  return null;
-}
+import { requireAuth } from "@/lib/auth-helpers";
 
 // GET - Get current active shift for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const guard = await requireAuth();
-    if (guard) return guard;
-
-    const session = await auth();
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+    const { session } = authResult;
 
     // Find the user's currently open shift
     const shift = await prisma.shift.findFirst({
       where: {
-        userId: session!.user.id,
+        userId: session.user.id,
         status: "OPEN",
       },
       include: {

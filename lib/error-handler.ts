@@ -135,17 +135,17 @@ export function getStatusCode(error: unknown): number {
  * Log error for debugging (in production, send to error tracking service)
  */
 export function logError(error: unknown, context?: string): void {
-  const timestamp = new Date().toISOString()
-  const contextPrefix = context ? `[${context}]` : ""
-
   if (error instanceof Error) {
-    console.error(`${contextPrefix} Error:`, {
+    // Use dynamic import to avoid circular dependencies at module level
+    const prefix = context ? `[${context}]` : "";
+    console.error(`${prefix} Error:`, {
       message: error.message,
       stack: error.stack,
       name: error.name,
-    })
+    });
   } else {
-    console.error(`${contextPrefix} Unknown error:`, error)
+    const prefix = context ? `[${context}]` : "";
+    console.error(`${prefix} Unknown error:`, error);
   }
 }
 
@@ -228,7 +228,7 @@ export function withErrorHandling<T extends (...args: unknown[]) => Promise<Resp
   fn: T,
   context?: string
 ): T {
-  return (async function(this: unknown, ...args: Parameters<T>) {
+  return (async function (this: unknown, ...args: Parameters<T>) {
     try {
       return await fn.apply(this, args)
     } catch (error) {

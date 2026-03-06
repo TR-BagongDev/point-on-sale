@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
 
 // GET - Get modification history for an order
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+
     const { id: orderId } = await params;
 
     // Validate orderId parameter

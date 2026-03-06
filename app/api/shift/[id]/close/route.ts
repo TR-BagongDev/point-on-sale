@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/auth-helpers";
 import { checkUnresolvedOrders } from "@/lib/shift-utils";
-
-async function requireAuth() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  return null;
-}
 
 // POST - Close a shift (calculate expected cash and discrepancy)
 export async function POST(
@@ -19,8 +9,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const guard = await requireAuth();
-    if (guard) return guard;
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
 
     const { id } = await params;
 

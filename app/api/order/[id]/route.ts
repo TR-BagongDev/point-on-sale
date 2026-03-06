@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
+import { patchOrderSchema } from "@/lib/validation";
+import { handleApiError, createValidationError } from "@/lib/error-handler";
 
 // GET - Get a single order by ID
 export async function GET(
@@ -7,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+
     const { id } = await params;
 
     // Validate id parameter
@@ -58,6 +64,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) return authResult.error;
+
     const { id } = await params;
 
     // Validate id parameter
@@ -69,49 +78,19 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, notes } = body;
 
     // Validate that at least one field is provided
-    if (status === undefined && notes === undefined) {
+    if (body.status === undefined && body.notes === undefined) {
       return NextResponse.json(
         { error: "At least one field (status or notes) must be provided" },
         { status: 400 }
       );
     }
 
-    // Build update data object with only provided fields
-    const updateData: Record<string, unknown> = {};
-
-    if (status !== undefined) {
-      // Validate status is a string and is a valid status value
-      if (typeof status !== "string") {
-        return NextResponse.json(
-          { error: "Status must be a string" },
-          { status: 400 }
-        );
-      }
-
-      const validStatuses = ["PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"];
-      if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` },
-          { status: 400 }
-        );
-      }
-
-      updateData.status = status;
-    }
-
-    if (notes !== undefined) {
-      // Validate notes type
-      if (typeof notes !== "string") {
-        return NextResponse.json(
-          { error: "Notes must be a string" },
-          { status: 400 }
-        );
-      }
-
-      updateData.notes = notes;
+    // Validate with Zod schema
+    const parsed = patchOrderSchema.safeParse(body);
+    if (!parsed.success) {
+      return handleApiError(createValidationError(parsed.error), "Update order");
     }
 
     // Check if order exists
@@ -128,7 +107,7 @@ export async function PATCH(
 
     const order = await prisma.order.update({
       where: { id },
-      data: updateData,
+      data: parsed.data,
       include: {
         items: {
           include: {

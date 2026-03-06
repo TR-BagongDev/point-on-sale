@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
-
-async function requireAdmin() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  return null;
-}
+import { requireAdmin } from "@/lib/auth-helpers";
+import { updateSettingsSchema } from "@/lib/validation";
+import { handleApiError, createValidationError } from "@/lib/error-handler";
 
 // GET - Get store settings
 export async function GET() {
   try {
-    const guard = await requireAdmin();
-    if (guard) return guard;
+    const authResult = await requireAdmin();
+    if ("error" in authResult) return authResult.error;
 
     const settings = await prisma.setting.findFirst();
     return NextResponse.json(settings);
@@ -36,61 +24,28 @@ export async function GET() {
 // PUT - Update store settings
 export async function PUT(request: NextRequest) {
   try {
-    const guard = await requireAdmin();
-    if (guard) return guard;
+    const authResult = await requireAdmin();
+    if ("error" in authResult) return authResult.error;
 
     const body = await request.json();
-    const { storeName, address, phone, taxRate, npwp } = body;
 
-    // Validate store name if provided
-    if (storeName !== undefined && (typeof storeName !== "string" || storeName.trim() === "")) {
-      return NextResponse.json(
-        { error: "Store name must be a non-empty string" },
-        { status: 400 }
-      );
+    // Validate with Zod schema (only storeName, address, phone, taxRate)
+    const parsed = updateSettingsSchema.safeParse(body);
+    if (!parsed.success) {
+      return handleApiError(createValidationError(parsed.error), "Update settings");
     }
 
-    // Validate address if provided
-    if (address !== undefined && address !== null && typeof address !== "string") {
-      return NextResponse.json(
-        { error: "Address must be a string" },
-        { status: 400 }
-      );
-    }
+    const { storeName, address, phone, taxRate } = parsed.data;
 
-    // Validate phone if provided
-    if (phone !== undefined && phone !== null && typeof phone !== "string") {
-      return NextResponse.json(
-        { error: "Phone must be a string" },
-        { status: 400 }
-      );
-    }
-
-    // Validate NPWP if provided
-    if (npwp !== undefined && npwp !== null && typeof npwp !== "string") {
-      return NextResponse.json(
-        { error: "NPWP must be a string" },
-        { status: 400 }
-      );
-    }
+    // Handle npwp separately (not in schema but part of the model)
+    const { npwp } = body;
 
     // Validate NPWP format if provided and not empty
-    if (npwp !== undefined && npwp !== null && npwp.trim() !== "") {
+    if (npwp !== undefined && npwp !== null && typeof npwp === "string" && npwp.trim() !== "") {
       const npwpPattern = /^\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}$/;
       if (!npwpPattern.test(npwp.trim())) {
         return NextResponse.json(
           { error: "NPWP format is invalid. Expected format: XX.XXX.XXX.X-XXX.XXX" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate tax rate if provided
-    if (taxRate !== undefined && taxRate !== null && taxRate !== "") {
-      const parsedTaxRate = parseFloat(taxRate);
-      if (isNaN(parsedTaxRate) || parsedTaxRate < 0 || parsedTaxRate > 100) {
-        return NextResponse.json(
-          { error: "Tax rate must be a valid number between 0 and 100" },
           { status: 400 }
         );
       }
@@ -103,21 +58,21 @@ export async function PUT(request: NextRequest) {
       settings = await prisma.setting.update({
         where: { id: settings.id },
         data: {
-          ...(storeName !== undefined && { storeName: storeName.trim() }),
+          storeName: storeName.trim(),
           ...(address !== undefined && { address: address?.trim() || null }),
           ...(phone !== undefined && { phone: phone?.trim() || null }),
-          ...(npwp !== undefined && { npwp: npwp?.trim() || null }),
-          ...(taxRate !== undefined && taxRate !== null && taxRate !== "" && { taxRate: parseFloat(taxRate) }),
+          ...(npwp !== undefined && { npwp: typeof npwp === "string" ? npwp?.trim() || null : null }),
+          taxRate,
         },
       });
     } else {
       settings = await prisma.setting.create({
         data: {
-          storeName: storeName?.trim() || "",
+          storeName: storeName.trim(),
           address: address?.trim() || null,
           phone: phone?.trim() || null,
-          npwp: npwp?.trim() || null,
-          taxRate: (taxRate !== undefined && taxRate !== null && taxRate !== "") ? parseFloat(taxRate) : 0,
+          npwp: typeof npwp === "string" ? npwp?.trim() || null : null,
+          taxRate,
         },
       });
     }

@@ -49,8 +49,8 @@ export interface OfflineOrder {
   tax: number;
   discount: number;
   total: number;
-  paymentMethod: string;
-  status: string;
+  paymentMethod: "CASH" | "CARD" | "QRIS" | "TRANSFER";
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;

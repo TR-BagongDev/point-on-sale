@@ -1,48 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useCartStore, type CartItem } from "@/store/cart";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useCartStore } from "@/store/cart";
 import { useOfflineStore } from "@/store/offline-store";
 import { useSyncQueueStore } from "@/store/sync-queue";
 import { OfflineBanner } from "@/components/offline/OfflineBanner";
-import { SyncStatusIndicator } from "@/components/offline/SyncStatusIndicator";
-import { ShiftStatusIndicator } from "@/components/shift/ShiftStatusIndicator";
-import {
-  Plus,
-  Minus,
-  Trash2,
-  CreditCard,
-  Banknote,
-  QrCode,
-  ShoppingCart,
-  Search,
-  Printer,
-  Zap,
-} from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { printReceipt, type Order } from "@/lib/receipt";
 import { toast } from "@/lib/toast";
 import { useAccessibility } from "@/lib/accessibility-context";
+import { MenuGrid } from "./components/MenuGrid";
+import { CartPanel } from "./components/CartPanel";
+import { CheckoutDialog } from "./components/CheckoutDialog";
+import { OpenShiftDialog } from "./components/OpenShiftDialog";
 
 interface Menu {
   id: string;
@@ -93,7 +64,6 @@ export function KasirClient() {
   const [currentShift, setCurrentShift] = useState<Shift | null>(null);
   const [shiftLoading, setShiftLoading] = useState(true);
   const [showOpenShiftDialog, setShowOpenShiftDialog] = useState(false);
-  const [startingCash, setStartingCash] = useState("");
 
   // Offline and sync state
   const isOnline = useOfflineStore((state) => state.isOnline);
@@ -101,6 +71,10 @@ export function KasirClient() {
   const pendingCount = useSyncQueueStore((state) => state.getPendingCount());
 
   const { items, addItem, removeItem, updateQuantity, updateNotes, clearCart, getSubtotal, getTax, getTotal, getItemCount } = useCartStore();
+
+  // =========================================================================
+  // Data Fetching
+  // =========================================================================
 
   async function fetchMenus() {
     try {
@@ -139,63 +113,18 @@ export function KasirClient() {
       const res = await fetch("/api/shift?status=OPEN");
       if (!res.ok) {
         if (res.status === 401) {
-          // Unauthorized - user not logged in
           setCurrentShift(null);
           return;
         }
         throw new Error("Failed to fetch shift");
       }
       const data = await res.json();
-      // Get the first open shift for the current user
       const userShift = Array.isArray(data) ? data[0] : null;
       setCurrentShift(userShift);
     } catch (error) {
-      // If there's an error, assume no shift
       setCurrentShift(null);
     } finally {
       setShiftLoading(false);
-    }
-  }
-
-  async function handleOpenShift() {
-    if (!startingCash) {
-      toast.error("Modal awal harus diisi", {
-        description: "Masukkan jumlah modal awal",
-      });
-      return;
-    }
-
-    const cash = parseFloat(startingCash);
-    if (isNaN(cash) || cash < 0) {
-      toast.error("Modal awal tidak valid", {
-        description: "Masukkan jumlah yang valid",
-      });
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/shift", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startingCash: cash }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to open shift");
-      }
-
-      const shift = await res.json();
-      setCurrentShift(shift);
-      setShowOpenShiftDialog(false);
-      setStartingCash("");
-      toast.success("Shift berhasil dibuka!", {
-        description: `Shift dimulai dengan modal ${formatCurrency(cash)}`,
-      });
-    } catch (error: any) {
-      toast.error("Gagal membuka shift", {
-        description: error.message || "Terjadi kesalahan saat membuka shift",
-      });
     }
   }
 
@@ -203,10 +132,12 @@ export function KasirClient() {
     fetchMenus();
     fetchCategories();
     fetchCurrentShift();
-
-    // Initialize offline listeners
     useOfflineStore.getState().initializeOnlineListeners();
   }, []);
+
+  // =========================================================================
+  // Handlers
+  // =========================================================================
 
   const handleAddToCart = (menu: Menu) => {
     addItem({
@@ -217,15 +148,31 @@ export function KasirClient() {
     });
   };
 
-  const filteredMenus = menus.filter((menu) => {
-    const matchesCategory = !selectedCategory || menu.categoryId === selectedCategory;
-    const matchesSearch = menu.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch && menu.isAvailable;
-  });
+  const handleOpenShift = async (startingCash: number) => {
+    try {
+      const res = await fetch("/api/shift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startingCash }),
+      });
 
-  const subtotal = getSubtotal();
-  const tax = getTax(TAX_RATE);
-  const total = getTotal(TAX_RATE, discount);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to open shift");
+      }
+
+      const shift = await res.json();
+      setCurrentShift(shift);
+      setShowOpenShiftDialog(false);
+      toast.success("Shift berhasil dibuka!", {
+        description: `Shift dimulai dengan modal ${formatCurrency(startingCash)}`,
+      });
+    } catch (error: any) {
+      toast.error("Gagal membuka shift", {
+        description: error.message || "Terjadi kesalahan saat membuka shift",
+      });
+    }
+  };
 
   const handleCheckout = async (paymentMethod: string) => {
     setIsCheckingOut(true);
@@ -245,7 +192,6 @@ export function KasirClient() {
         notes: orderNotes,
       };
 
-      // Show offline message if applicable
       if (!isOnline) {
         toast.info("Mode Offline", {
           description: "Pesanan akan disimpan secara lokal dan disinkronkan saat Anda kembali online.",
@@ -264,13 +210,11 @@ export function KasirClient() {
 
       const createdOrder: Order = await res.json();
 
-      // Clear cart and close dialog
       clearCart();
       setShowCheckout(false);
       setDiscount(0);
       setOrderNotes("");
 
-      // Show appropriate success message
       if (isOnline) {
         toast.success("Pesanan berhasil dibuat!", {
           description: `Total: ${formatCurrency(total)}`,
@@ -281,13 +225,10 @@ export function KasirClient() {
         });
       }
 
-      // Auto-print receipt
       try {
         printReceipt({
           order: createdOrder,
-          template: {
-            paperWidth: 80, // Default to 80mm thermal printer
-          },
+          template: { paperWidth: 80 },
           settings: {
             storeName: "Warung Nasi Goreng",
             address: "",
@@ -297,7 +238,6 @@ export function KasirClient() {
           },
         });
       } catch (printError) {
-        // Still show success even if print fails
         toast.warning("Gagal mencetak struk", {
           description: "Pesanan tetap berhasil dibuat",
         });
@@ -312,11 +252,17 @@ export function KasirClient() {
   };
 
   const handleQuickCheckout = async () => {
-    // Quick checkout with default CASH payment method
     await handleCheckout("CASH");
   };
 
-  // Determine sync status for indicator
+  // =========================================================================
+  // Derived State
+  // =========================================================================
+
+  const subtotal = getSubtotal();
+  const tax = getTax(TAX_RATE);
+  const total = getTotal(TAX_RATE, discount);
+
   const getSyncStatus = (): "online" | "offline" | "syncing" | "pending" => {
     if (isSyncing) return "syncing";
     if (!isOnline) return "offline";
@@ -324,12 +270,15 @@ export function KasirClient() {
     return "online";
   };
 
-  // Determine shift status for indicator
   const getShiftStatus = (): "open" | "closed" | "none" => {
     if (shiftLoading) return "none";
     if (currentShift?.status === "OPEN") return "open";
     return "none";
   };
+
+  // =========================================================================
+  // Render
+  // =========================================================================
 
   return (
     <TooltipProvider>
@@ -345,410 +294,56 @@ export function KasirClient() {
         </div>
       ) : (
         <div className="flex gap-6 h-[calc(100vh-3rem)]">
-          {/* Menu Section */}
-          <div className="flex-1 flex flex-col">
-        {/* Search */}
-        <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Cari menu..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <MenuGrid
+            menus={menus}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            searchQuery={searchQuery}
+            onCategoryChange={setSelectedCategory}
+            onSearchChange={setSearchQuery}
+            onAddToCart={handleAddToCart}
+          />
+
+          <CartPanel
+            items={items}
+            subtotal={subtotal}
+            tax={tax}
+            total={total}
+            taxRate={TAX_RATE}
+            discount={discount}
+            simpleMode={simpleMode}
+            pendingCount={pendingCount}
+            shiftLoading={shiftLoading}
+            currentShiftName={currentShift ? `Shift: ${currentShift.user.name}` : undefined}
+            syncStatus={getSyncStatus()}
+            shiftStatus={getShiftStatus()}
+            onUpdateQuantity={updateQuantity}
+            onUpdateNotes={updateNotes}
+            onRemoveItem={removeItem}
+            onDiscountChange={setDiscount}
+            onQuickCheckout={handleQuickCheckout}
+            onShowCheckout={() => setShowCheckout(true)}
+            onOpenShift={() => setShowOpenShiftDialog(true)}
+            getItemCount={getItemCount}
+          />
+
+          <CheckoutDialog
+            open={showCheckout}
+            onOpenChange={setShowCheckout}
+            total={total}
+            orderNotes={orderNotes}
+            onNotesChange={setOrderNotes}
+            onCheckout={handleCheckout}
+            isCheckingOut={isCheckingOut}
+            simpleMode={simpleMode}
+          />
+
+          <OpenShiftDialog
+            open={showOpenShiftDialog}
+            onOpenChange={setShowOpenShiftDialog}
+            onOpenShift={handleOpenShift}
+          />
         </div>
-
-        {/* Categories */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"}
-              onClick={() => setSelectedCategory(category.id)}
-              className={cn(
-                "shrink-0",
-                selectedCategory === category.id && "bg-primary-600 hover:bg-primary-700"
-              )}
-            >
-              {category.name}
-            </Button>
-          ))}
-        </div>
-
-        {/* Menu Grid */}
-        <ScrollArea className="flex-1">
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredMenus.map((menu) => (
-              <Card
-                key={menu.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group min-h-[44px]"
-                onClick={() => handleAddToCart(menu)}
-              >
-                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center min-h-[120px]">
-                  {menu.image ? (
-                    <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-5xl">🍜</span>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-base truncate leading-tight">{menu.name}</h3>
-                  <p className="text-primary-600 font-bold text-lg mt-2">
-                    {formatCurrency(menu.price)}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Cart Section */}
-      <Card className="w-96 flex flex-col">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Keranjang
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <ShiftStatusIndicator
-                status={getShiftStatus()}
-                shiftName={currentShift ? `Shift: ${currentShift.user.name}` : undefined}
-              />
-              <SyncStatusIndicator status={getSyncStatus()} />
-              {items.length > 0 && (
-                <Badge variant="secondary">{getItemCount()} item</Badge>
-              )}
-            </div>
-          </div>
-          {pendingCount > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              {pendingCount} pesanan menunggu sinkronisasi
-            </p>
-          )}
-          {!shiftLoading && !currentShift && (
-            <Button
-              className="w-full mt-2 bg-yellow-500 hover:bg-yellow-600 text-white"
-              onClick={() => setShowOpenShiftDialog(true)}
-            >
-              Buka Shift
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-0">
-          {items.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Keranjang kosong</p>
-                <p className="text-sm">Klik menu untuk menambahkan</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <ScrollArea className="flex-1 px-6">
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.id} className="flex items-start gap-3 py-2 border-b pb-3 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(item.price)}
-                        </p>
-                        <Input
-                          type="text"
-                          placeholder="Catatan..."
-                          value={item.notes || ""}
-                          onChange={(e) => updateNotes(item.id, e.target.value)}
-                          className="mt-2 h-8 text-xs"
-                          maxLength={100}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-12 w-12"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Kurangi jumlah</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <span className="w-10 text-center text-base font-medium">
-                          {item.quantity}
-                        </span>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-12 w-12"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Tambah jumlah</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-12 w-12 text-destructive hover:text-destructive"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Hapus item</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-
-              <div className="p-6 border-t">
-                {/* Discount Input - Hidden in Simple Mode */}
-                {!simpleMode && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-sm text-muted-foreground">Diskon:</span>
-                    <Input
-                      type="number"
-                      value={discount || ""}
-                      onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                      className="h-8 w-24"
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-
-                <Separator className="my-3" />
-
-                {/* Summary */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatCurrency(subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pajak ({TAX_RATE}%)</span>
-                    <span>{formatCurrency(tax)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-secondary-600">
-                      <span>Diskon</span>
-                      <span>-{formatCurrency(discount)}</span>
-                    </div>
-                  )}
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span className="text-primary-600">{formatCurrency(total)}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-4">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        className="w-full h-12 text-lg bg-primary-600 hover:bg-primary-700 shadow-lg"
-                        onClick={handleQuickCheckout}
-                      >
-                        <Zap className="mr-2 h-5 w-5" />
-                        Bayar Sekarang
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Bayar dengan tunai (cepat)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 text-sm"
-                        onClick={() => setShowCheckout(true)}
-                      >
-                        Pilih Metode Lain
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Pilih QRIS atau Debit</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Checkout Dialog */}
-      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
-          </DialogHeader>
-          {/* Order Notes - Hidden in Simple Mode */}
-          {!simpleMode && (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Catatan Pesanan</label>
-                <Textarea
-                  placeholder="Tambahkan catatan untuk pesanan ini..."
-                  value={orderNotes}
-                  onChange={(e) => setOrderNotes(e.target.value)}
-                  maxLength={200}
-                  rows={3}
-                />
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-3 gap-3 py-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-24 flex-col gap-2"
-                  onClick={() => handleCheckout("CASH")}
-                  disabled={isCheckingOut}
-                >
-                  {isCheckingOut ? (
-                    <>
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Banknote className="h-8 w-8" />
-                      <span>Tunai</span>
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Bayar dengan uang tunai</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-24 flex-col gap-2"
-                  onClick={() => handleCheckout("QRIS")}
-                  disabled={isCheckingOut}
-                >
-                  {isCheckingOut ? (
-                    <>
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      <QrCode className="h-8 w-8" />
-                      <span>QRIS</span>
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Scan QR untuk pembayaran</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-24 flex-col gap-2"
-                  onClick={() => handleCheckout("DEBIT")}
-                  disabled={isCheckingOut}
-                >
-                  {isCheckingOut ? (
-                    <>
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-8 w-8" />
-                      <span>Debit</span>
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Bayar dengan kartu debit</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary-600">{formatCurrency(total)}</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCheckout(false)}>
-              Batal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Open Shift Dialog */}
-      <Dialog open={showOpenShiftDialog} onOpenChange={setShowOpenShiftDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Buka Shift Baru</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Modal Awal
-              </label>
-              <Input
-                type="number"
-                placeholder="Masukkan modal awal"
-                value={startingCash}
-                onChange={(e) => setStartingCash(e.target.value)}
-                min="0"
-                step="0.01"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Masukkan jumlah uang tunai yang ada di kasir saat memulai shift
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowOpenShiftDialog(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleOpenShift}
-              disabled={!startingCash}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-            >
-              Buka Shift
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
       )}
     </TooltipProvider>
   );

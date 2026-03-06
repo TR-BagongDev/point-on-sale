@@ -116,16 +116,16 @@ export default function PesananPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      let url = `/api/order?date=${dateFrom}`;
+      let url = `/api/order?date=${dateFrom}&limit=1000`;
       if (statusFilter !== "all") {
         url += `&status=${statusFilter}`;
       }
 
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
+      const result = await res.json();
 
-      setOrders(data);
+      setOrders(result.data);
     } catch (error) {
       toast.error("Gagal memuat pesanan", {
         description: "Terjadi kesalahan saat mengambil data pesanan",
@@ -243,380 +243,380 @@ export default function PesananPage() {
 
   return (
     <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Daftar Pesanan</h1>
-          <p className="text-muted-foreground">
-            Kelola dan pantau semua pesanan
-          </p>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Daftar Pesanan</h1>
+        <p className="text-muted-foreground">
+          Kelola dan pantau semua pesanan
+        </p>
+      </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Dari:</span>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-40"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Sampai:</span>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-40"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Status:</span>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua</SelectItem>
-                    <SelectItem value="PENDING">Menunggu</SelectItem>
-                    <SelectItem value="PREPARING">Disiapkan</SelectItem>
-                    <SelectItem value="READY">Siap</SelectItem>
-                    <SelectItem value="COMPLETED">Selesai</SelectItem>
-                  </SelectContent>
-                </Select>
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Dari:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Sampai:</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Status:</span>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua</SelectItem>
+                  <SelectItem value="PENDING">Menunggu</SelectItem>
+                  <SelectItem value="PREPARING">Disiapkan</SelectItem>
+                  <SelectItem value="READY">Siap</SelectItem>
+                  <SelectItem value="COMPLETED">Selesai</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Semua Pesanan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <Loading size="lg" className="mx-auto mb-4 text-primary-600" />
+                <p className="text-muted-foreground">Memuat data...</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Semua Pesanan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="text-center">
-                  <Loading size="lg" className="mx-auto mb-4 text-primary-600" />
-                  <p className="text-muted-foreground">Memuat data...</p>
-                </div>
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Tidak ada pesanan pada periode ini
-              </div>
-            ) : (
-              <ScrollArea className="h-[500px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No. Pesanan</TableHead>
-                      <TableHead>Waktu</TableHead>
-                      <TableHead>Kasir</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead>Metode</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-center">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => {
-                      const statusBadge = getStatusBadge(order.status);
-                      return (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">
-                            {order.orderNumber}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {formatDate(order.createdAt)}
-                          </TableCell>
-                          <TableCell>{order.user.name}</TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {order.items.map((item) => (
-                                <div key={item.id} className="text-sm">
-                                  <div className="flex items-start gap-2">
-                                    <span>{item.menu.name} x{item.quantity}</span>
-                                    {item.notes && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs bg-orange-50 text-orange-700 border-orange-200"
-                                      >
-                                        <FileText className="h-3 w-3 mr-1" />
-                                        {item.notes}
-                                      </Badge>
-                                    )}
-                                  </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Tidak ada pesanan pada periode ini
+            </div>
+          ) : (
+            <ScrollArea className="h-[500px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No. Pesanan</TableHead>
+                    <TableHead>Waktu</TableHead>
+                    <TableHead>Kasir</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Metode</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => {
+                    const statusBadge = getStatusBadge(order.status);
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">
+                          {order.orderNumber}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(order.createdAt)}
+                        </TableCell>
+                        <TableCell>{order.user.name}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {order.items.map((item) => (
+                              <div key={item.id} className="text-sm">
+                                <div className="flex items-start gap-2">
+                                  <span>{item.menu.name} x{item.quantity}</span>
+                                  {item.notes && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-orange-50 text-orange-700 border-orange-200"
+                                    >
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      {item.notes}
+                                    </Badge>
+                                  )}
                                 </div>
-                              ))}
-                              {order.notes && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1"
-                                >
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  Pesanan: {order.notes}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getPaymentBadge(order.paymentMethod)}>
-                              {order.paymentMethod}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusBadge.className}>
-                              {statusBadge.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-primary">
-                            {formatCurrency(order.total)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1">
+                              </div>
+                            ))}
+                            {order.notes && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1"
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                Pesanan: {order.notes}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getPaymentBadge(order.paymentMethod)}>
+                            {order.paymentMethod}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={statusBadge.className}>
+                            {statusBadge.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-primary">
+                          {formatCurrency(order.total)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Lihat Detail"
+                              onClick={() => handleViewOrder(order)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {order.status === "PENDING" || order.status === "PREPARING" ? (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                title="Lihat Detail"
-                                onClick={() => handleViewOrder(order)}
+                                title="Edit Pesanan"
+                                onClick={() => handleEditOrder(order)}
                               >
-                                <Eye className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                               </Button>
-                              {order.status === "PENDING" || order.status === "PREPARING" ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  title="Edit Pesanan"
-                                  onClick={() => handleEditOrder(order)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              ) : null}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Order Modification Dialog */}
-        {editingOrder && (
-          <OrderModificationDialog
-            order={editingOrder}
-            open={showEditDialog}
-            onOpenChange={setShowEditDialog}
-            onOrderUpdated={handleOrderUpdated}
-          />
-        )}
+      {/* Order Modification Dialog */}
+      {editingOrder && (
+        <OrderModificationDialog
+          order={editingOrder}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onOrderUpdated={handleOrderUpdated}
+        />
+      )}
 
-        {/* Order Detail Dialog */}
-        {viewingOrder && (
-          <Dialog open={showDetailDialog} onOpenChange={handleCloseDetailDialog}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-              <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-2xl">
-                    Detail Pesanan {viewingOrder.orderNumber}
-                  </DialogTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCloseDetailDialog}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </DialogHeader>
+      {/* Order Detail Dialog */}
+      {viewingOrder && (
+        <Dialog open={showDetailDialog} onOpenChange={handleCloseDetailDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-2xl">
+                  Detail Pesanan {viewingOrder.orderNumber}
+                </DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseDetailDialog}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
 
-              <ScrollArea className="h-[calc(90vh-8rem)] pr-4">
-                <div className="space-y-6">
-                  {/* Order Summary */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Informasi Pesanan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Waktu</p>
-                          <p className="font-medium">{formatDate(viewingOrder.createdAt)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Kasir</p>
-                          <p className="font-medium">{viewingOrder.user.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Metode Pembayaran</p>
-                          <Badge className={getPaymentBadge(viewingOrder.paymentMethod)}>
-                            {viewingOrder.paymentMethod}
-                          </Badge>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Status</p>
-                          <Badge className={getStatusBadge(viewingOrder.status).className}>
-                            {getStatusBadge(viewingOrder.status).label}
-                          </Badge>
-                        </div>
+            <ScrollArea className="h-[calc(90vh-8rem)] pr-4">
+              <div className="space-y-6">
+                {/* Order Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Informasi Pesanan</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Waktu</p>
+                        <p className="font-medium">{formatDate(viewingOrder.createdAt)}</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Kasir</p>
+                        <p className="font-medium">{viewingOrder.user.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Metode Pembayaran</p>
+                        <Badge className={getPaymentBadge(viewingOrder.paymentMethod)}>
+                          {viewingOrder.paymentMethod}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <Badge className={getStatusBadge(viewingOrder.status).className}>
+                          {getStatusBadge(viewingOrder.status).label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  {/* Items */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Items</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Menu</TableHead>
-                            <TableHead className="text-center">Qty</TableHead>
-                            <TableHead className="text-right">Harga</TableHead>
-                            <TableHead className="text-right">Subtotal</TableHead>
+                {/* Items */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Items</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Menu</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead className="text-right">Harga</TableHead>
+                          <TableHead className="text-right">Subtotal</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {viewingOrder.items.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{item.menu.name}</p>
+                                {item.notes && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    <FileText className="h-3 w-3 inline mr-1" />
+                                    {item.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">{item.quantity}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(item.price)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(item.price * item.quantity)}
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {viewingOrder.items.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">{item.menu.name}</p>
-                                  {item.notes && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      <FileText className="h-3 w-3 inline mr-1" />
-                                      {item.notes}
-                                    </p>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">{item.quantity}</TableCell>
-                              <TableCell className="text-right">
-                                {formatCurrency(item.price)}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {formatCurrency(item.price * item.quantity)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      {viewingOrder.notes && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-sm font-medium text-blue-800">
-                            <FileText className="h-4 w-4 inline mr-2" />
-                            Catatan Pesanan:
-                          </p>
-                          <p className="text-sm text-blue-700 mt-1">{viewingOrder.notes}</p>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {viewingOrder.notes && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm font-medium text-blue-800">
+                          <FileText className="h-4 w-4 inline mr-2" />
+                          Catatan Pesanan:
+                        </p>
+                        <p className="text-sm text-blue-700 mt-1">{viewingOrder.notes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Totals */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-medium">{formatCurrency(viewingOrder.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Pajak (10%)</span>
+                        <span className="font-medium">{formatCurrency(viewingOrder.tax)}</span>
+                      </div>
+                      {viewingOrder.discount > 0 && (
+                        <div className="flex justify-between text-red-600">
+                          <span>Diskon</span>
+                          <span className="font-medium">-{formatCurrency(viewingOrder.discount)}</span>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                      <div className="flex justify-between text-xl font-bold pt-2 border-t">
+                        <span>Total</span>
+                        <span className="text-primary">{formatCurrency(viewingOrder.total)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  {/* Totals */}
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Subtotal</span>
-                          <span className="font-medium">{formatCurrency(viewingOrder.subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Pajak (10%)</span>
-                          <span className="font-medium">{formatCurrency(viewingOrder.tax)}</span>
-                        </div>
-                        {viewingOrder.discount > 0 && (
-                          <div className="flex justify-between text-red-600">
-                            <span>Diskon</span>
-                            <span className="font-medium">-{formatCurrency(viewingOrder.discount)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-xl font-bold pt-2 border-t">
-                          <span>Total</span>
-                          <span className="text-primary">{formatCurrency(viewingOrder.total)}</span>
+                {/* Modification History */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-lg">Riwayat Modifikasi</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingHistory ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <Loading size="sm" className="mx-auto mb-2 text-primary-600" />
+                          <p className="text-sm text-muted-foreground">Memuat riwayat modifikasi...</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Modification History */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-lg">Riwayat Modifikasi</CardTitle>
+                    ) : modifications.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>Tidak ada riwayat modifikasi</p>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      {loadingHistory ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="text-center">
-                            <Loading size="sm" className="mx-auto mb-2 text-primary-600" />
-                            <p className="text-sm text-muted-foreground">Memuat riwayat modifikasi...</p>
-                          </div>
-                        </div>
-                      ) : modifications.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>Tidak ada riwayat modifikasi</p>
-                        </div>
-                      ) : (
-                        <ScrollArea className="h-[300px]">
-                          <div className="space-y-3">
-                            {modifications.map((mod) => {
-                              const actionBadge = getActionBadge(mod.action);
-                              return (
-                                <div
-                                  key={mod.id}
-                                  className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                                >
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 space-y-2">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge className={actionBadge.className}>
-                                          {actionBadge.label}
-                                        </Badge>
-                                        <span className="text-sm text-muted-foreground">
-                                          {formatDate(mod.createdAt)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-sm">
-                                        <User className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-medium">{mod.user.name}</span>
-                                        <span className="text-muted-foreground">
-                                          ({mod.user.email})
-                                        </span>
-                                      </div>
-                                      <p className="text-sm">{mod.description}</p>
+                    ) : (
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {modifications.map((mod) => {
+                            const actionBadge = getActionBadge(mod.action);
+                            return (
+                              <div
+                                key={mod.id}
+                                className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <Badge className={actionBadge.className}>
+                                        {actionBadge.label}
+                                      </Badge>
+                                      <span className="text-sm text-muted-foreground">
+                                        {formatDate(mod.createdAt)}
+                                      </span>
                                     </div>
+                                    <div className="flex items-center gap-2 text-sm">
+                                      <User className="h-4 w-4 text-muted-foreground" />
+                                      <span className="font-medium">{mod.user.name}</span>
+                                      <span className="text-muted-foreground">
+                                        ({mod.user.email})
+                                      </span>
+                                    </div>
+                                    <p className="text-sm">{mod.description}</p>
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-    );
-  }
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}

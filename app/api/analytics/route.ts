@@ -6,27 +6,13 @@ import {
   getSalesTrend,
   getPeriodComparison,
 } from "@/lib/analytics";
-import { auth } from "@/auth";
-
-async function requireAdmin() {
-  const session = await auth();
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  return null;
-}
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // GET - Get analytics data for a date range
 export async function GET(request: NextRequest) {
   try {
-    const guard = await requireAdmin();
-    if (guard) return guard;
+    const authResult = await requireAdmin();
+    if ("error" in authResult) return authResult.error;
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");

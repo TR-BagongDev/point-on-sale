@@ -89,7 +89,7 @@ export default function LaporanPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      let url = `/api/order?date=${dateFrom}`;
+      let url = `/api/order?date=${dateFrom}&limit=1000`;
       if (dateTo && dateTo !== dateFrom) {
         // For date range, we'll just use the single date for now
       }
@@ -99,7 +99,8 @@ export default function LaporanPage() {
         throw new Error("Gagal memuat data pesanan");
       }
 
-      let data = await res.json();
+      const result = await res.json();
+      let data = result.data;
 
       // Filter by payment method
       if (paymentFilter !== "all") {
@@ -202,200 +203,200 @@ export default function LaporanPage() {
 
   return (
     <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Laporan Penjualan</h1>
-            <p className="text-muted-foreground">
-              Lihat dan analisis penjualan Anda
-            </p>
-          </div>
-          <Button onClick={exportToCSV} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Laporan Penjualan</h1>
+          <p className="text-muted-foreground">
+            Lihat dan analisis penjualan Anda
+          </p>
         </div>
+        <Button onClick={exportToCSV} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
+      </div>
 
-        {/* Filters */}
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Dari:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Sampai:</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Metode:</span>
+              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua</SelectItem>
+                  <SelectItem value="CASH">Tunai</SelectItem>
+                  <SelectItem value="QRIS">QRIS</SelectItem>
+                  <SelectItem value="DEBIT">Debit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Dari:</span>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-40"
-                />
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Penjualan
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatCurrency(stats.totalSales)}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Sampai:</span>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-40"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Metode:</span>
-                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua</SelectItem>
-                    <SelectItem value="CASH">Tunai</SelectItem>
-                    <SelectItem value="QRIS">QRIS</SelectItem>
-                    <SelectItem value="DEBIT">Debit</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="p-3 rounded-full bg-green-100">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Penjualan
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(stats.totalSales)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-full bg-green-100">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Pesanan
-                  </p>
-                  <p className="text-2xl font-bold">{stats.totalOrders}</p>
-                </div>
-                <div className="p-3 rounded-full bg-blue-100">
-                  <ShoppingCart className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Rata-rata Pesanan
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(stats.averageOrder)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-full bg-purple-100">
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Pajak
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(stats.totalTax)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-full bg-orange-100">
-                  <FileText className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Orders Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Detail Pesanan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Memuat data...
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Pesanan
+                </p>
+                <p className="text-2xl font-bold">{stats.totalOrders}</p>
               </div>
-            ) : orders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Tidak ada pesanan pada periode ini
+              <div className="p-3 rounded-full bg-blue-100">
+                <ShoppingCart className="h-6 w-6 text-blue-600" />
               </div>
-            ) : (
-              <ScrollArea className="h-[400px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No. Pesanan</TableHead>
-                      <TableHead>Waktu</TableHead>
-                      <TableHead>Kasir</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead>Metode</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-center">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          {order.orderNumber}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(order.createdAt)}
-                        </TableCell>
-                        <TableCell>{order.user.name}</TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {order.items.map((i) => `${i.menu.name} x${i.quantity}`).join(", ")}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getPaymentBadge(order.paymentMethod)}>
-                            {order.paymentMethod}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-primary-600">
-                          {formatCurrency(order.total)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            onClick={() => handleReprint(order)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            )}
+            </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Rata-rata Pesanan
+                </p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(stats.averageOrder)}
+                </p>
+              </div>
+              <div className="p-3 rounded-full bg-purple-100">
+                <TrendingUp className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Pajak
+                </p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(stats.totalTax)}
+                </p>
+              </div>
+              <div className="p-3 rounded-full bg-orange-100">
+                <FileText className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Detail Pesanan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Memuat data...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Tidak ada pesanan pada periode ini
+            </div>
+          ) : (
+            <ScrollArea className="h-[400px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No. Pesanan</TableHead>
+                    <TableHead>Waktu</TableHead>
+                    <TableHead>Kasir</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Metode</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">
+                        {order.orderNumber}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(order.createdAt)}
+                      </TableCell>
+                      <TableCell>{order.user.name}</TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {order.items.map((i) => `${i.menu.name} x${i.quantity}`).join(", ")}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getPaymentBadge(order.paymentMethod)}>
+                          {order.paymentMethod}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-primary-600">
+                        {formatCurrency(order.total)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          onClick={() => handleReprint(order)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
